@@ -7,6 +7,10 @@ import { Heading } from '@/components/ui/Heading';
 import { Product } from '@/components/Product';
 import { Icon } from '@/components/ui/Icon';
 
+import { useEffect } from "react";
+import { useProducts } from "medusa-react";
+import Link from 'next/link';
+
 const ShopFilter = () => {
   return (
     <Dropdown.Root>
@@ -43,6 +47,14 @@ const ShopFilter = () => {
 };
 
 const ShopPage: NextPageWithLayout = () => {
+  const { products, isLoading } = useProducts();
+
+  // useEffect(() => {
+  //   console.log("Products:", products);
+  // }, [products]);
+
+  console.log("Products:", products);
+
   return (
     <>
       <main className="px-4 py-10 lg:px-24 lg:pb-39.5 lg:pt-17">
@@ -55,6 +67,26 @@ const ShopPage: NextPageWithLayout = () => {
         </div>
 
         <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
+          
+          {products?.map((product:any) => (
+            <Product
+              key={product.id}
+              className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
+              title={product.title}
+              price={product.price}
+              discount={product.discount}
+              discountedPrice={product.discountedPrice}
+              collection={product.collection?.handle}
+              src={product.images[0]?.url}
+              height={3200}
+              width={2400}
+              alt={product.title}
+              linkTo={`/product/${product.id}`}
+            />
+          ))}
+        </div>
+
+        {/* <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
           <Product
             className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
             title="Black Sweatshirt"
@@ -108,7 +140,7 @@ const ShopPage: NextPageWithLayout = () => {
             alt="Black sweatshirt"
             linkTo="/product/black-sweatshirt"
           />
-        </div>
+        </div> */}
 
         <button className="relative mx-auto mt-9 block transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2">
           There is more

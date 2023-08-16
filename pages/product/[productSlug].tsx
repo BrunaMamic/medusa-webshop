@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { Heading } from '@/components/ui/Heading';
 import { QuantityInput } from '@/components/ui/QuantityInput';
+import { GetServerSidePropsContext } from 'next';
 
 const ProductSinglePage: NextPageWithLayout = () => {
+
   return (
     <main className="group flex grid-cols-12 flex-col-reverse px-4 py-8 sm:px-24 lg:grid lg:pb-36 lg:pl-0 lg:pt-15 xl:pl-24">
       <div className="col-span-6 mt-20 lg:mt-20">
@@ -338,8 +340,32 @@ const ProductSinglePage: NextPageWithLayout = () => {
   );
 };
 
+
 ProductSinglePage.getLayout = function getLayout(page: React.ReactElement) {
   return <DefaultLayout>{page}</DefaultLayout>;
 };
+
+export const getServerSideProps = async ({
+  req,
+  res,
+  params,
+}: GetServerSidePropsContext) => {
+  if (params?.id) {
+    const res = await fetch(
+      `http://localhost:9000/store/products/${params.id}`
+    );
+    const resJson = await res.json();
+
+    if (resJson) {
+      return {
+        props: {
+          product: resJson,
+        },
+      };
+    }
+  }
+  return { props: {} };
+};
+
 
 export default ProductSinglePage;

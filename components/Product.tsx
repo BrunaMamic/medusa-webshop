@@ -3,6 +3,7 @@ import Image from 'next/image';
 import classNames from '@/utils/classNames';
 import { Tag } from '@/components/ui/Tag';
 
+
 export interface ProductProps {
   className?: string;
   price: number;
@@ -30,6 +31,7 @@ export const Product: React.FC<ProductProps> = ({
   linkTo,
   collection,
 }) => {
+
   if (discount && !discountedPrice) {
     throw new Error('discountedPrice is required when using discount');
   } else if (discountedPrice && !discount) {

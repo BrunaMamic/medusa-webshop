@@ -2,6 +2,9 @@
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  images: {
+    domains: ['localhost']
+  }
 };
 
 module.exports = nextConfig;

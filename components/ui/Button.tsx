@@ -70,59 +70,61 @@ const getButtonSizeClasses = (size: ButtonProps['size'] = 'sm') => {
   return 'text-xs py-3 px-6';
 };
 
-export const Button: React.FC<ButtonProps> = (props) => {
-  const {
-    children,
-    variant = 'primary',
-    size = 'sm',
-    className,
-    ...rest
-  } = props;
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (props, ref) => {
+    const {
+      children,
+      variant = 'primary',
+      size = 'sm',
+      className,
+      ...rest
+    } = props;
 
-  return (
-    <RawButton
-      className={classNames(
-        baseButtonClasses,
-        getButtonVariantClasses(variant),
-        getButtonSizeClasses(size),
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </RawButton>
-  );
-};
+    return (
+      <RawButton
+        {...rest}
+        ref={ref}
+        className={classNames(
+          baseButtonClasses,
+          getButtonVariantClasses(variant),
+          getButtonSizeClasses(size),
+          className
+        )}
+      >
+        {children}
+      </RawButton>
+    );
+  }
+);
+Button.displayName = 'Button';
 
 export interface ButtonIconProps extends Omit<ButtonProps, 'children'> {
   iconName: IconProps['name'];
 }
 
-export const ButtonIcon: React.FC<ButtonIconProps> = ({
-  className,
-  iconName,
-  size,
-  variant = 'primary',
-  ...rest
-}) => {
-  return (
-    <RawButton
-      className={classNames(
-        'p-3',
-        baseButtonClasses,
-        getButtonVariantClasses(variant),
-        className
-      )}
-      {...rest}
-    >
-      <Icon
-        name={iconName}
+export const ButtonIcon = React.forwardRef<HTMLButtonElement, ButtonIconProps>(
+  ({ className, iconName, size, variant = 'primary', ...rest }, ref) => {
+    return (
+      <RawButton
+        {...rest}
+        ref={ref}
         className={classNames(
-          '[&>path]:fill-gray-10',
-          { 'h-4 w-4': size === 'sm' },
-          { 'h-4 w-4 lg:h-6 lg:w-6': size === 'lg' }
+          'p-3',
+          baseButtonClasses,
+          getButtonVariantClasses(variant),
+          className
         )}
-      />
-    </RawButton>
-  );
-};
+      >
+        <Icon
+          name={iconName}
+          className={classNames(
+            '[&>path]:fill-gray-10',
+            { 'h-4 w-4': size === 'sm' },
+            { 'h-4 w-4 lg:h-6 lg:w-6': size === 'lg' }
+          )}
+        />
+      </RawButton>
+    );
+  }
+);
+ButtonIcon.displayName = 'ButtonIcon';

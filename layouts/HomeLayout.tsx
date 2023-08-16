@@ -9,9 +9,7 @@ export default function HomeLayout({
 }) {
   return (
     <>
-      <React.Suspense>
-        <Header colorScheme="inverted" isAbsolute />
-      </React.Suspense>
+      <Header colorScheme="inverted" isAbsolute />
 
       {children}
 

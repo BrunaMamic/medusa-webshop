@@ -9,9 +9,7 @@ export default function DefaultLayout({
 }) {
   return (
     <>
-      <React.Suspense>
-        <Header />
-      </React.Suspense>
+      <Header />
 
       {children}
 

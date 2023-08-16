@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link, { LinkProps } from 'next/link';
 import Image from 'next/image';
 import classNames from '@/utils/classNames';
 import { Tag } from '@/components/ui/Tag';
@@ -13,7 +13,7 @@ export interface ProductProps {
   height: number;
   width: number;
   alt: string;
-  linkTo: string;
+  linkTo: LinkProps['href'];
   collection: string;
 }
 

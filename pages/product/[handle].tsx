@@ -26,24 +26,26 @@ const ProductSinglePage = ({ product }: any) => {
   const [uniqueSize, setUniqueSize] = useState<any>([]);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   //CART
-
   const { cart, createCart } = MedusaCart();
-  // console.log(products?.[0].variants?.[0].id);
-
   const handleCreateCart = async () => {
-    await createCart.mutate({});ß
-    console.log(cart);
+    await createCart.mutate({});
   };
-  console.log(cart);
 
   const createLineItem = useCreateLineItem(cart?.id!);
+  console.log(products);
+  
 
-  const addItem = () => {
+  const addItem = (selectedColor:any, selectedSize:any) => {
     createLineItem.mutate({
       variant_id: products?.[0].variants?.[0].id,
       quantity: 1, //prilagodi kasnije kolicini pravoj
+      metadata: {
+        color: selectedColor,
+        size: selectedSize,
+      },
     });
   };
 
@@ -77,6 +79,19 @@ const ProductSinglePage = ({ product }: any) => {
   const handleSizeChange = (sizeValue: string) => {
     setSelectedSize(sizeValue);
     console.log('Chosen size:', sizeValue);
+  };
+  // console.log(products?.[0].variants[0].inventory_quantity);
+  
+  const handleIncreaseQuantity = () => {
+    if (selectedQuantity < products?.[0].variants[0].inventory_quantity!) {
+      setSelectedQuantity((prevQuantity) => prevQuantity + 1);
+    }
+  };
+
+  const handleDecreaseQuantity = () => {
+    if (selectedQuantity > 1) {
+      setSelectedQuantity((prevQuantity) => prevQuantity - 1);
+    }
   };
 
   return products?.[0] ? (
@@ -164,7 +179,7 @@ const ProductSinglePage = ({ product }: any) => {
           <Button size="lg">View cart</Button>
         </Link>
         <Button size="lg" className="m-4">
-          <button onClick={() => addItem()}>ADD</button>
+          <button onClick={() => addItem(selectedColor || '', selectedSize || '')}>ADD</button>
         </Button>
 
         <div>

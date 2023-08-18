@@ -14,6 +14,7 @@ export interface QuantityInputProps
   locale?: NumberFieldStateOptions['locale'];
   variant?: 'primary' | 'secondary';
   className?: string;
+  onValueChange?: (value: number) => void; 
 }
 
 export const QuantityInput = React.forwardRef<
@@ -46,6 +47,9 @@ export const QuantityInput = React.forwardRef<
       incrementButtonProps,
       decrementButtonProps,
     } = useNumberField(props, state, inputRef);
+
+    
+    
 
     return (
       <div

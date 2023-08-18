@@ -12,24 +12,42 @@ import { QuantityInput } from '@/components/ui/QuantityInput';
 import { GetServerSidePropsContext } from 'next';
 import { useProducts } from 'medusa-react';
 import { useState, useEffect } from 'react';
-import CartPage from '../cart';
-import { useCart as MedusaCart} from "medusa-react"
+import { useCart as MedusaCart, useCreateLineItem } from 'medusa-react';
+
+import { medusaClient } from '@/lib/config';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
   // console.log(router.query);
   // @ts-ignore
   const { products, isLoading } = useProducts({ handle: router.query.handle });
-  const { cart, createCart } = MedusaCart();
+
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
+  //CART
+
+  const { cart, createCart } = MedusaCart();
+  // console.log(products?.[0].variants?.[0].id);
+
   const handleCreateCart = async () => {
-    await createCart.mutate({});
+    await createCart.mutate({});ß
+    console.log(cart);
+  };
+  console.log(cart);
+
+  const createLineItem = useCreateLineItem(cart?.id!);
+
+  const addItem = () => {
+    createLineItem.mutate({
+      variant_id: products?.[0].variants?.[0].id,
+      quantity: 1, //prilagodi kasnije kolicini pravoj
+    });
   };
 
+  //PRODUCT DATA
 
   useEffect(() => {
     const colors = Array.from(
@@ -59,8 +77,7 @@ const ProductSinglePage = ({ product }: any) => {
   const handleSizeChange = (sizeValue: string) => {
     setSelectedSize(sizeValue);
     console.log('Chosen size:', sizeValue);
-  }
-
+  };
 
   return products?.[0] ? (
     <main className="group flex grid-cols-12 flex-col-reverse px-4 py-8 sm:px-24 lg:grid lg:pb-36 lg:pl-0 lg:pt-15 xl:pl-24">
@@ -143,16 +160,16 @@ const ProductSinglePage = ({ product }: any) => {
           className="mb-8"
         />
 
-        {createCart.isLoading && <div>Loading...</div>}
-        {!cart?.id && <button onClick={handleCreateCart}>Create Cart</button>}
-        {cart?.id && <div>Cart ID: {cart.id}</div>}
-
         <Link href="/cart">
-          <Button size="lg" className="mb-4 w-full">
-            Add to Cart
-          </Button>
+          <Button size="lg">View cart</Button>
         </Link>
+        <Button size="lg" className="m-4">
+          <button onClick={() => addItem()}>ADD</button>
+        </Button>
 
+        <div>
+          {!cart?.id && <button onClick={handleCreateCart}>Create cart</button>}
+        </div>
 
         <p className="text-gray-300">Estimate delivery 2-3 days</p>
       </div>

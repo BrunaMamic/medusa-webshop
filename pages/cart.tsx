@@ -9,17 +9,27 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { QuantityInput } from '@/components/ui/QuantityInput';
 import { Heading } from '@/components/ui/Heading';
+import { useCart as MedusaCart, useCreateLineItem } from 'medusa-react';
 
-const CartPage: NextPageWithLayout = ({ products, selectedColor } :any) => {
 
+const CartPage: NextPageWithLayout = () => {
+  const { cart, createCart } = MedusaCart();
+    
+  
   return (
     <div>
-
-      <p>Color: {selectedColor}</p>
+      <h2>Cart Items</h2>
+      {cart?.items.map((item: any, index: any) => (
+        <div key={index} className="cart-item">
+          <p>{item.title}</p>
+          <p>Quantity: {item.quantity}</p>
+        </div>
+      ))}
     </div>
   );
 
-      {/* <div className="grid grid-cols-12 lg:gap-x-12">
+  {
+    /* <div className="grid grid-cols-12 lg:gap-x-12">
         <div className="col-span-12 lg:col-span-8 xl:col-span-9">
           <Heading className="mb-8 text-primary lg:mb-13.5" size="xl4">
             Your shopping bag (4)
@@ -176,8 +186,8 @@ const CartPage: NextPageWithLayout = ({ products, selectedColor } :any) => {
             </Button>
           </Link>
         </div>
-      </div> */}
-
+      </div> */
+  }
 };
 
 CartPage.getLayout = function getLayout(page: React.ReactElement) {
@@ -185,3 +195,4 @@ CartPage.getLayout = function getLayout(page: React.ReactElement) {
 };
 
 export default CartPage;
+

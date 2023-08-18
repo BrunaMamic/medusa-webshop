@@ -81,66 +81,10 @@ const ShopPage: NextPageWithLayout = () => {
               height={3200}
               width={2400}
               alt={product.title}
-              linkTo={`/product/${product.id}`}
+              linkTo={`/product/${product.handle}`}
             />
           ))}
         </div>
-
-        {/* <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
-          <Product
-            className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-            title="Black Sweatshirt"
-            price={30}
-            collection="fresh"
-            src="/images/content/item-fresh-bag-white.png"
-            height={3200}
-            width={2400}
-            alt="Black sweatshirt"
-            linkTo="/product/black-sweatshirt"
-          />
-
-          <Product
-            className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-            title="Black Sweatshirt"
-            discount={50}
-            price={30}
-            discountedPrice={15}
-            collection="matz"
-            src="/images/content/item-fresh-bag-white.png"
-            height={3200}
-            width={2400}
-            alt="Black sweatshirt"
-            linkTo="/product/black-sweatshirt"
-          />
-
-          <Product
-            className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-            title="Black Sweatshirt"
-            discount={50}
-            price={30}
-            discountedPrice={15}
-            collection="base"
-            src="/images/content/item-fresh-bag-white.png"
-            height={3200}
-            width={2400}
-            alt="Black sweatshirt"
-            linkTo="/product/black-sweatshirt"
-          />
-
-          <Product
-            className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-            title="Black Sweatshirt"
-            discount={50}
-            price={30}
-            discountedPrice={15}
-            collection="fresh"
-            src="/images/content/item-fresh-bag-white.png"
-            height={3200}
-            width={2400}
-            alt="Black sweatshirt"
-            linkTo="/product/black-sweatshirt"
-          />
-        </div> */}
 
         <button className="relative mx-auto mt-9 block transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2">
           There is more

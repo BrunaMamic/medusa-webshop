@@ -10,10 +10,16 @@ import { Button } from '@/components/ui/Button';
 import { QuantityInput } from '@/components/ui/QuantityInput';
 import { Heading } from '@/components/ui/Heading';
 
-const CartPage: NextPageWithLayout = () => {
+const CartPage: NextPageWithLayout = ({ products, selectedColor } :any) => {
+
   return (
-    <main className="px-4 py-12 lg:px-24 lg:pb-40 lg:pt-18">
-      <div className="grid grid-cols-12 lg:gap-x-12">
+    <div>
+
+      <p>Color: {selectedColor}</p>
+    </div>
+  );
+
+      {/* <div className="grid grid-cols-12 lg:gap-x-12">
         <div className="col-span-12 lg:col-span-8 xl:col-span-9">
           <Heading className="mb-8 text-primary lg:mb-13.5" size="xl4">
             Your shopping bag (4)
@@ -170,9 +176,8 @@ const CartPage: NextPageWithLayout = () => {
             </Button>
           </Link>
         </div>
-      </div>
-    </main>
-  );
+      </div> */}
+
 };
 
 CartPage.getLayout = function getLayout(page: React.ReactElement) {

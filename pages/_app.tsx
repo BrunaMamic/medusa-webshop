@@ -78,9 +78,9 @@ export default function MyApp({ Component, pageProps }: AppPropsWithLayout) {
           <CartDropdownProvider>
           <CartProvider>
             <StoreProvider>
-              <AccountProvider>
+              {/* <AccountProvider> */}
                 {getLayout(<Component {...pageProps} />)}
-              </AccountProvider>
+              {/* </AccountProvider> */}
             </StoreProvider>  
           </CartProvider>  
 

@@ -38,7 +38,7 @@ export const Product: React.FC<ProductProps> = ({
     throw new Error('discount is required when using discountedPrice');
   }
 
-  return (
+  return ( 
     <Link href={linkTo} className={classNames('group block', className)}>
       <div className="relative">
         <Image

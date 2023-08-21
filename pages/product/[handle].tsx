@@ -13,8 +13,10 @@ import { GetServerSidePropsContext } from 'next';
 import { useProducts } from 'medusa-react';
 import { useState, useEffect } from 'react';
 import { useCart as MedusaCart, useCreateLineItem } from 'medusa-react';
+import { useStore } from '@/lib/context/store-context';
 
 import { medusaClient } from '@/lib/config';
+import { log } from 'util';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
@@ -27,27 +29,51 @@ const ProductSinglePage = ({ product }: any) => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [options, setOptions] = useState({
+    variant: undefined,
+    quantity: 0,
+  });
+
+  const [matchingVariants, setMatchingVariant] = useState<string[]>([]);
+  const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
 
   //CART
-  const { cart, createCart } = MedusaCart();
+  const { cart, createCart, setCart } = MedusaCart();
   const handleCreateCart = async () => {
     await createCart.mutate({});
   };
 
   const createLineItem = useCreateLineItem(cart?.id!);
-  console.log(products);
-  
 
-  const addItem = (selectedColor:any, selectedSize:any) => {
-    createLineItem.mutate({
-      variant_id: products?.[0].variants?.[0].id,
-      quantity: 1, //prilagodi kasnije kolicini pravoj
-      metadata: {
-        color: selectedColor,
-        size: selectedSize,
+  const addItem = (selectedColor: any, selectedSize: any) => {
+    console.log(cart);
+    createLineItem.mutate(
+      {
+        variant_id: products?.[0].variants?.[0].id,
+        quantity: selectedQuantity,
+        metadata: {
+          color: selectedColor,
+          size: selectedSize,
+        },
       },
-    });
+      {
+        onError: (err) => {
+          console.log(err);
+        },
+        onSuccess: (data) => {
+          setCart(data.cart);
+        },
+      }
+    );
   };
+
+  // const addItem = (selectedColor: any, selectedSize: any) => {
+  //   console.log(products?.[0].variants?.[0].id)
+  //   store.addItem({
+  //     variantId: products?.[0].variants?.[0].id,
+  //     quantity: 1, //prilagodi kasnije kolicini pravoj
+  //   });
+  // };
 
   //PRODUCT DATA
 
@@ -60,6 +86,10 @@ const ProductSinglePage = ({ product }: any) => {
       )
     );
     setUniqueColors(colors);
+
+    if (colors.length > 0) {
+      handleColorChange(colors[0]);
+    }
 
     const sizes = Array.from(
       new Set(
@@ -74,25 +104,32 @@ const ProductSinglePage = ({ product }: any) => {
   const handleColorChange = (colorValue: string) => {
     setSelectedColor(colorValue);
     console.log('Chosen color:', colorValue);
+
+    const colorOption = products?.[0].options?.find(
+      (option: any) => option.title === 'Color'
+    );
+
+    const matchingVariants = products?.[0].variants.filter((variant: any) => {
+      return variant.options.some((option: any) => {
+        return (
+          option.option_id === colorOption?.id && option.value === colorValue
+        );
+      });
+    });
+
+    setMatchingVariant(matchingVariants);
+
+    matchingVariants?.forEach((variant: any) => {
+      console.log(variant.title);
+    });
   };
 
   const handleSizeChange = (sizeValue: string) => {
     setSelectedSize(sizeValue);
+    setIsAddToCartEnabled(true);
     console.log('Chosen size:', sizeValue);
   };
-  // console.log(products?.[0].variants[0].inventory_quantity);
-  
-  const handleIncreaseQuantity = () => {
-    if (selectedQuantity < products?.[0].variants[0].inventory_quantity!) {
-      setSelectedQuantity((prevQuantity) => prevQuantity + 1);
-    }
-  };
 
-  const handleDecreaseQuantity = () => {
-    if (selectedQuantity > 1) {
-      setSelectedQuantity((prevQuantity) => prevQuantity - 1);
-    }
-  };
 
   return products?.[0] ? (
     <main className="group flex grid-cols-12 flex-col-reverse px-4 py-8 sm:px-24 lg:grid lg:pb-36 lg:pl-0 lg:pt-15 xl:pl-24">
@@ -134,7 +171,11 @@ const ProductSinglePage = ({ product }: any) => {
           {uniqueColors.map((colorValue: string, colorIndex: number) => (
             <button
               key={colorIndex}
-              className="flex items-center gap-2"
+              className={`px-3 mr-3 py-2 border border-gray-300 cursor-pointer ${
+                colorValue === selectedColor ? "bg-gray-50" : ""
+              }`}
+
+              // "flex items-center gap-2"
               onClick={() => handleColorChange(colorValue)}
             >
               <svg
@@ -156,19 +197,27 @@ const ProductSinglePage = ({ product }: any) => {
 
         <p className="mb-4">Size</p>
         <div className="m-3 flex">
-          {uniqueSize.map((sizeValue: string, sizeIndex: number) => (
-            <button
-              key={sizeIndex}
-              className="m-2 flex items-center gap-2 border border-gray-300 px-2 py-1"
-              onClick={() => handleSizeChange(sizeValue)}
-            >
-              {sizeValue}
-            </button>
-          ))}
+          {matchingVariants && matchingVariants.length > 0 && (
+            <div className='flex'>
+              {matchingVariants.map((variant: any, index: number) => (
+                <button
+                  key={index}
+                  className={`px-3 mr-3 py-2 border border-gray-300 cursor-pointer ${
+                    variant.title === selectedSize ? "bg-gray-100" : ""
+                  }`}
+                  // "m-2 flex items-center gap-2 border border-gray-300 px-2 py-1"
+                  onClick={() => handleSizeChange(variant.title)}
+                >
+                  {variant.title}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <p className="mb-2">Quantity</p>
 
         <QuantityInput
+          onChange={(val) => setSelectedQuantity(val)}
           defaultValue={1}
           maxValue={20}
           variant="secondary"
@@ -178,8 +227,15 @@ const ProductSinglePage = ({ product }: any) => {
         <Link href="/cart">
           <Button size="lg">View cart</Button>
         </Link>
+
         <Button size="lg" className="m-4">
-          <button onClick={() => addItem(selectedColor || '', selectedSize || '')}>ADD</button>
+          <button
+            className={`${isAddToCartEnabled ? " " : "cursor-not-allowed"} `}
+            onClick={() => addItem(selectedColor || '', selectedSize || '')}
+            disabled={!isAddToCartEnabled}
+          >
+            ADD
+          </button>
         </Button>
 
         <div>

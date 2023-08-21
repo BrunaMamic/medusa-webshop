@@ -27,6 +27,7 @@ export const QuantityInput = React.forwardRef<
       className,
       minValue = 0,
       'aria-label': ariaLabel = 'Quantity',
+      onValueChange,
       ...rest
     },
     ref
@@ -48,7 +49,7 @@ export const QuantityInput = React.forwardRef<
       decrementButtonProps,
     } = useNumberField(props, state, inputRef);
 
-    
+
     
 
     return (

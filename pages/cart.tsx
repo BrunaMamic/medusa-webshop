@@ -13,10 +13,10 @@ import { useCart as MedusaCart, useDeleteLineItem } from 'medusa-react';
 
 const CartPage: NextPageWithLayout = () => {
   const { cart } = MedusaCart();
-  console.log(cart?.region.currency_code);
-  if(cart?.region.currency_code === 'eur'){
-    console.log('€');
-  }
+  console.log(cart);
+
+  console.log(cart?.items.length);
+  
   
 
   const deleteLineItem = useDeleteLineItem(cart?.id!)
@@ -54,6 +54,7 @@ const CartPage: NextPageWithLayout = () => {
                   </Link>
                   <ul className="relative ml-4 inline-flex h-full w-full flex-col">
                     <li className="text-xs font-black italic lg:text-md">
+                      
                       {item.title}
                     </li>
                     <li className="text-xs2 text-gray-400 lg:text-sm">
@@ -65,7 +66,7 @@ const CartPage: NextPageWithLayout = () => {
                     <li className="right-0 top-0 sm:absolute">
                       <ul className="relative mt-1 flex items-center gap-2 sm:mt-0 sm:block sm:self-start">
                         <li className="text-xs font-medium lg:text-md">
-                          {item.total} £
+                          {(item.total / 100).toFixed(2)} {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                         </li>
                       </ul>
                     </li>
@@ -93,7 +94,9 @@ const CartPage: NextPageWithLayout = () => {
           <li className="mb-3.5 text-gray-400">
             <ul className="flex justify-between">
               <li>Subtotal:</li>
-              <li className="text-black">{cart?.subtotal}  {cart?.region.currency_code === 'eur' ? '€' : '£'}</li>
+              <li className="text-black">
+                {/* {cart?.subtotal} */}
+              {(cart?.subtotal / 100).toFixed(2)}  {cart?.region?.currency_code === 'eur' ? '€' : '£'}</li>
             </ul>
           </li>
           <li className="mb-6 border-b border-gray-200 pb-5.5 text-gray-400">
@@ -105,7 +108,9 @@ const CartPage: NextPageWithLayout = () => {
           <li className="text-lg font-semibold">
             <ul className="flex justify-between">
               <li>Total:</li>
-              <li>{cart?.subtotal} {cart?.region.currency_code === 'eur' ? '€' : '£'}</li>
+              <li>
+                {/* {cart?.subtotal}  */}
+              {(cart?.subtotal / 100).toFixed(2)} {cart?.region?.currency_code === 'eur' ? '€' : '£'}</li>
             </ul>
           </li>
         </ul>

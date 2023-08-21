@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import classNames from '@/utils/classNames';
 import { Icon, BadgeIcon } from '@/components/ui/Icon';
+import { useCart } from 'medusa-react';
 
 export interface HeaderProps {
   isAbsolute?: boolean;
@@ -17,6 +18,9 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const pathName = usePathname();
   const [isOffcanvasOpen, setIsOffcanvasOpen] = React.useState(false);
+  const {cart} = useCart()
+
+  console.log(cart)
 
   return (
     <>

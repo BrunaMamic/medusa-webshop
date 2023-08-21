@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isOffcanvasOpen, setIsOffcanvasOpen] = React.useState(false);
   const {cart} = useCart()
 
-  console.log(cart)
+  console.log(cart?.items.length!)
 
   return (
     <>
@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
           </li>
           <li>
             <Link href="/cart">
-              <BadgeIcon icon="bag" value={10} />
+              <BadgeIcon icon="bag" value={cart?.items.length!} />
             </Link>
           </li>
         </ul>

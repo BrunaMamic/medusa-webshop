@@ -9,71 +9,56 @@ import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { Heading } from '@/components/ui/Heading';
 import { QuantityInput } from '@/components/ui/QuantityInput';
-import { GetServerSidePropsContext } from 'next';
 import { useProducts } from 'medusa-react';
 import { useState, useEffect } from 'react';
 import { useCart as MedusaCart, useCreateLineItem } from 'medusa-react';
 import { useStore } from '@/lib/context/store-context';
-
-import { medusaClient } from '@/lib/config';
-import { log } from 'util';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
   // console.log(router.query);
   // @ts-ignore
   const { products, isLoading } = useProducts({ handle: router.query.handle });
-
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
+
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const [options, setOptions] = useState({
-    variant: undefined,
-    quantity: 0,
+
+  // const [options, setOptions] = useState({
+  //   variant: undefined,
+  //   quantity: 0,
+  // });
+
+  console.log(products);
+  
+
+  const [selectedOptions, setSelectedOptions] = useState({
+    color: '',
+    size: '',
+    quantity: selectedQuantity,
   });
+  console.log(selectedOptions);
 
   const [matchingVariants, setMatchingVariant] = useState<string[]>([]);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
 
   //CART
-  const { cart, createCart, setCart } = MedusaCart();
-  const handleCreateCart = async () => {
-    await createCart.mutate({});
-  };
+  const store = useStore();
+  console.log(store);
 
-  const createLineItem = useCreateLineItem(cart?.id!);
-
-  const addItem = (selectedColor: any, selectedSize: any) => {
-    console.log(cart);
-    createLineItem.mutate(
-      {
-        variant_id: products?.[0].variants?.[0].id,
-        quantity: selectedQuantity,
-        metadata: {
-          color: selectedColor,
-          size: selectedSize,
-        },
-      },
-      {
-        onError: (err) => {
-          console.log(err);
-        },
-        onSuccess: (data) => {
-          setCart(data.cart);
-        },
-      }
-    );
-  };
-
-  // const addItem = (selectedColor: any, selectedSize: any) => {
-  //   console.log(products?.[0].variants?.[0].id)
-  //   store.addItem({
-  //     variantId: products?.[0].variants?.[0].id,
-  //     quantity: 1, //prilagodi kasnije kolicini pravoj
-  //   });
-  // };
+const addItem = () => {
+  console.log(products?.[0].variants?.[0].id);
+  store.addItem({
+    variantId: matchingVariants?.[0].id,
+    quantity: selectedOptions.quantity,
+    // metadata: {
+    //   color: selectedOptions.color,
+    //   size: selectedOptions.size,
+    // },
+  });
+};
 
   //PRODUCT DATA
 
@@ -102,8 +87,11 @@ const ProductSinglePage = ({ product }: any) => {
   }, [products?.[0]?.options]);
 
   const handleColorChange = (colorValue: string) => {
-    setSelectedColor(colorValue);
-    console.log('Chosen color:', colorValue);
+    const updatedOptions = {
+      ...selectedOptions,
+      color: colorValue,
+    };
+    setSelectedOptions(updatedOptions);
 
     const colorOption = products?.[0].options?.find(
       (option: any) => option.title === 'Color'
@@ -116,18 +104,20 @@ const ProductSinglePage = ({ product }: any) => {
         );
       });
     });
+    
 
     setMatchingVariant(matchingVariants);
-
-    matchingVariants?.forEach((variant: any) => {
-      console.log(variant.title);
-    });
   };
 
   const handleSizeChange = (sizeValue: string) => {
-    setSelectedSize(sizeValue);
     setIsAddToCartEnabled(true);
     console.log('Chosen size:', sizeValue);
+
+    const updatedOptions = {
+      ...selectedOptions,
+      size: sizeValue,
+    };
+    setSelectedOptions(updatedOptions);
   };
 
 
@@ -171,10 +161,9 @@ const ProductSinglePage = ({ product }: any) => {
           {uniqueColors.map((colorValue: string, colorIndex: number) => (
             <button
               key={colorIndex}
-              className={`px-3 mr-3 py-2 border border-gray-300 cursor-pointer ${
-                colorValue === selectedColor ? "bg-gray-50" : ""
+              className={`mr-3 cursor-pointer border border-gray-300 px-3 py-2 ${
+                colorValue === selectedOptions.color ? 'bg-gray-50' : ''
               }`}
-
               // "flex items-center gap-2"
               onClick={() => handleColorChange(colorValue)}
             >
@@ -198,12 +187,12 @@ const ProductSinglePage = ({ product }: any) => {
         <p className="mb-4">Size</p>
         <div className="m-3 flex">
           {matchingVariants && matchingVariants.length > 0 && (
-            <div className='flex'>
+            <div className="flex">
               {matchingVariants.map((variant: any, index: number) => (
                 <button
                   key={index}
-                  className={`px-3 mr-3 py-2 border border-gray-300 cursor-pointer ${
-                    variant.title === selectedSize ? "bg-gray-100" : ""
+                  className={`mr-3 cursor-pointer border border-gray-300 px-3 py-2 ${
+                    variant.title === selectedOptions.size ? 'bg-gray-100' : ''
                   }`}
                   // "m-2 flex items-center gap-2 border border-gray-300 px-2 py-1"
                   onClick={() => handleSizeChange(variant.title)}
@@ -217,7 +206,12 @@ const ProductSinglePage = ({ product }: any) => {
         <p className="mb-2">Quantity</p>
 
         <QuantityInput
-          onChange={(val) => setSelectedQuantity(val)}
+          onChange={(val) => {
+            setSelectedOptions({
+              ...selectedOptions,
+              quantity: val,
+            });
+          }}
           defaultValue={1}
           maxValue={20}
           variant="secondary"
@@ -230,17 +224,13 @@ const ProductSinglePage = ({ product }: any) => {
 
         <Button size="lg" className="m-4">
           <button
-            className={`${isAddToCartEnabled ? " " : "cursor-not-allowed"} `}
-            onClick={() => addItem(selectedColor || '', selectedSize || '')}
+            className={`${isAddToCartEnabled ? ' ' : 'cursor-not-allowed'} `}
+            onClick={() => addItem()}
             disabled={!isAddToCartEnabled}
           >
             ADD
           </button>
         </Button>
-
-        <div>
-          {!cart?.id && <button onClick={handleCreateCart}>Create cart</button>}
-        </div>
 
         <p className="text-gray-300">Estimate delivery 2-3 days</p>
       </div>

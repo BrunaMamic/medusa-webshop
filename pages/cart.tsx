@@ -9,43 +9,47 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { QuantityInput } from '@/components/ui/QuantityInput';
 import { Heading } from '@/components/ui/Heading';
-import { useCart as MedusaCart } from 'medusa-react';
+import { useCart as MedusaCart,  } from 'medusa-react';
 
-import { useStore } from '@/lib/context/store-context';
+import { useStore  } from '@/lib/context/store-context';
+
+import _ from 'lodash';
 
 
 const CartPage: NextPageWithLayout = () => {
+  
   const { cart } = MedusaCart();
-  console.log(cart);
-
   const store = useStore();
+  console.log(store);
+  console.log(cart);
+  
+  
 
-  // const deleteItem = (lineId: string) => {
-  //   deleteLineItem.mutate(
-  //     { lineId },
-  //     {
-  //       onSuccess: () => {
-  //         console.log('Item deleted');
-  //       },
-  //     }
-  //   );
-  // };
+  const updateItem = async (lineId:string, quantity:number) => {
+    await store.updateItem({
+      lineId,
+      quantity,
+    });
+  };
+  
 
   const deleteItem = (lineId: string) => {
     store.deleteItem(lineId);
   };
-  
+
+  const sortedCartItems = _.orderBy(cart?.items, 'variant.title', 'asc');
+
 
   return (
     <div className="grid grid-cols-12 lg:gap-x-12">
       <div className="col-span-12 lg:col-span-8 xl:col-span-9">
         <Heading className="mb-8 text-primary lg:mb-13.5" size="xl4">
-          Your shopping bag
+          Your shopping bag ({cart?.items.length!})
         </Heading>
         <ul className="[&>li:first-child]:border-t [&>li:last-child]:border-0 [&>li:last-child]:pb-0 [&>li]:border-b [&>li]:border-gray-200 [&>li]:py-8">
           <li>
             <div className="group relative flex flex-col items-center justify-between">
-              {cart?.items.map((item: any, index: any) => (
+              {sortedCartItems.map((item: any, index: any) => (
                 <div className="m-4 flex w-full flex-row justify-between p-4">
                   <Link href="/" className="relative block flex-shrink-0">
                     <Image
@@ -61,7 +65,7 @@ const CartPage: NextPageWithLayout = () => {
                       {item.title}
                     </li>
                     <li className="text-xs2 text-gray-400 lg:text-sm">
-                      {item.metadata.color} / {item.metadata.size}
+                      {item.variant.title}
                     </li>
                     <li className="text-xs2 text-gray-400 lg:text-sm">
                       Quantity: {item.quantity}
@@ -78,6 +82,8 @@ const CartPage: NextPageWithLayout = () => {
                       <QuantityInput
                         defaultValue={item.quantity}
                         maxValue={20}
+                        onChange={(val) => updateItem(item.id, val)}
+                        
                       />
 
                       <button onClick={() => deleteItem(item.id)}>
@@ -140,3 +146,5 @@ CartPage.getLayout = function getLayout(page: React.ReactElement) {
 };
 
 export default CartPage;
+
+

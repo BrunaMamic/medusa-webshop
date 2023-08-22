@@ -11,7 +11,6 @@ import { Heading } from '@/components/ui/Heading';
 import { QuantityInput } from '@/components/ui/QuantityInput';
 import { useProducts } from 'medusa-react';
 import { useState, useEffect } from 'react';
-import { useCart as MedusaCart, useCreateLineItem } from 'medusa-react';
 import { useStore } from '@/lib/context/store-context';
 
 const ProductSinglePage = ({ product }: any) => {
@@ -19,20 +18,12 @@ const ProductSinglePage = ({ product }: any) => {
   // console.log(router.query);
   // @ts-ignore
   const { products, isLoading } = useProducts({ handle: router.query.handle });
+  console.log(products);
+  
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
 
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedSize, setSelectedSize] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-
-  // const [options, setOptions] = useState({
-  //   variant: undefined,
-  //   quantity: 0,
-  // });
-
-  console.log(products);
-  
 
   const [selectedOptions, setSelectedOptions] = useState({
     color: '',
@@ -41,25 +32,20 @@ const ProductSinglePage = ({ product }: any) => {
   });
   console.log(selectedOptions);
 
-  const [matchingVariants, setMatchingVariant] = useState<string[]>([]);
+  const [matchingVariants, setMatchingVariants] = useState<string[]>([]);
+  const [matchingVariant, setMatchingVariant] = useState<string[]>([]);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
+
+  console.log(matchingVariants);
 
   //CART
   const store = useStore();
-  console.log(store);
-
-const addItem = () => {
-  console.log(products?.[0].variants?.[0].id);
-  store.addItem({
-    variantId: matchingVariants?.[0].id,
-    quantity: selectedOptions.quantity,
-    // metadata: {
-    //   color: selectedOptions.color,
-    //   size: selectedOptions.size,
-    // },
-  });
-};
-
+  const addItem = () => {
+    store.addItem({
+      variantId: matchingVariant?.id,
+      quantity: selectedOptions.quantity,
+    });
+  };
   //PRODUCT DATA
 
   useEffect(() => {
@@ -104,14 +90,15 @@ const addItem = () => {
         );
       });
     });
-    
+    const matchingVariant = getVariant(colorValue, selectedOptions.size);
+    setMatchingVariant(matchingVariant);
+    console.log(matchingVariant);
 
-    setMatchingVariant(matchingVariants);
+    setMatchingVariants(matchingVariants);
   };
 
   const handleSizeChange = (sizeValue: string) => {
     setIsAddToCartEnabled(true);
-    console.log('Chosen size:', sizeValue);
 
     const updatedOptions = {
       ...selectedOptions,
@@ -120,6 +107,18 @@ const addItem = () => {
     setSelectedOptions(updatedOptions);
   };
 
+  const getVariant = (colorValue: string, sizeValue: string) => {
+    const matchingVariant = products?.[0].variants.find((x: any) => {
+      const colorOption = x.options.find((op: any) => op.value === colorValue);
+      const sizeOption = x.options.find((op: any) => op.value === sizeValue);
+
+      return colorOption && sizeOption;
+    });
+
+    return matchingVariant;
+  };
+
+  console.log(matchingVariants);
 
   return products?.[0] ? (
     <main className="group flex grid-cols-12 flex-col-reverse px-4 py-8 sm:px-24 lg:grid lg:pb-36 lg:pl-0 lg:pt-15 xl:pl-24">
@@ -186,22 +185,29 @@ const addItem = () => {
 
         <p className="mb-4">Size</p>
         <div className="m-3 flex">
-          {matchingVariants && matchingVariants.length > 0 && (
-            <div className="flex">
-              {matchingVariants.map((variant: any, index: number) => (
-                <button
-                  key={index}
-                  className={`mr-3 cursor-pointer border border-gray-300 px-3 py-2 ${
-                    variant.title === selectedOptions.size ? 'bg-gray-100' : ''
-                  }`}
-                  // "m-2 flex items-center gap-2 border border-gray-300 px-2 py-1"
-                  onClick={() => handleSizeChange(variant.title)}
-                >
-                  {variant.title}
-                </button>
-              ))}
-            </div>
-          )}
+          {uniqueSize.map((sizeValue: string, sizeIndex: number) => {
+            const isAvailableForSelectedColor = matchingVariants.some(
+              (variant: any) =>
+                variant.options.some(
+                  (option: any) => option.value === sizeValue
+                )
+            );
+            return (
+              <button
+                key={sizeIndex}
+                className={`mr-3 cursor-pointer border border-gray-300 px-3 py-2 ${
+                  sizeValue === selectedOptions.size
+                    ? 'bg-gray-100'
+                    : isAvailableForSelectedColor
+                    ? ''
+                    : 'pointer-events-none text-gray-100'
+                }`}
+                onClick={() => handleSizeChange(sizeValue)}
+              >
+                {sizeValue}
+              </button>
+            );
+          })}
         </div>
         <p className="mb-2">Quantity</p>
 

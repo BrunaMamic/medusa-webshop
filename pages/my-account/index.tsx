@@ -1,5 +1,4 @@
 import * as React from 'react';
-
 import type { NextPageWithLayout } from '@/pages/_app';
 import AccountLayout from '@/layouts/AccountLayout';
 import { Button } from '@/components/ui/Button';
@@ -8,33 +7,29 @@ import { Heading } from '@/components/ui/Heading';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/Input';
 import { SelectCountry } from '@/components/SelectCountry';
-
+import { useAccount } from '@/lib/context/account-context';
 const MyAccountPage: NextPageWithLayout = () => {
-  return (
+  const account = useAccount();
+  return account.customer ? (
     <div>
       <Heading size="xl" className="mb-8 text-primary lg:mb-15">
         Personal & security
       </Heading>
-
       <ul className="[&>li:last-child]:mb-0 [&>li]:mb-16">
         <li>
           <p className="mb-6 text-md">Personal information</p>
-
           <div className="flex flex-wrap justify-between gap-8 rounded-sm border border-gray-200 p-4">
             <Icon name="user" />
-
             <div className="flex flex-1 flex-wrap gap-8">
               <ul className="flex-1">
                 <li className="mb-0.5 text-xs2 text-gray-400">Name</li>
                 <li className="text-sm text-black">Jovana Jerimic</li>
               </ul>
-
               <ul className="flex-1">
                 <li className="mb-0.5 text-xs2 text-gray-400">Number</li>
                 <li className="break-all text-sm text-black">-</li>
               </ul>
             </div>
-
             <Dialog.Root>
               <Dialog.Trigger asChild>
                 <Button variant="secondary" className="self-start">
@@ -78,13 +73,10 @@ const MyAccountPage: NextPageWithLayout = () => {
             </Dialog.Root>
           </div>
         </li>
-
         <li>
           <p className="mb-6 text-md">Contact</p>
-
           <div className="mb-2 flex rounded-sm border border-gray-200 p-4">
             <Icon name="user" className="shrink-0" />
-
             <ul className="ml-8">
               <li className="mb-0.5 text-xs2 text-gray-400">Email</li>
               <li className="break-all text-sm text-black">
@@ -92,26 +84,21 @@ const MyAccountPage: NextPageWithLayout = () => {
               </li>
             </ul>
           </div>
-
           <p className="text-xs2 text-gray-400">
             If you want to change your email please contact us via customer
             support.
           </p>
         </li>
-
         <li>
           <p className="mb-6 text-md">Address</p>
-
           <div className="mb-10 flex flex-wrap items-start justify-between gap-8 rounded-sm border border-gray-200 p-4">
             <Icon name="user" className="shrink-0" />
-
             <div className="mr-auto flex-1 self-start">
               <div className="mb-8 flex gap-8">
                 <ul className="flex-1">
                   <li className="mb-0.5 text-xs2 text-gray-400">Country</li>
                   <li className="text-sm text-black">Croatia</li>
                 </ul>
-
                 <ul className="flex-1">
                   <li className="mb-0.5 text-xs2 text-gray-400">Address</li>
                   <li className="text-sm text-black">Duvanjsa 3</li>
@@ -128,14 +115,12 @@ const MyAccountPage: NextPageWithLayout = () => {
                   <li className="mb-0.5 text-xs2 text-gray-400">Postal Code</li>
                   <li className="text-sm text-black">10000</li>
                 </ul>
-
                 <ul className="flex-1">
                   <li className="mb-0.5 text-xs2 text-gray-400">City</li>
                   <li className="text-sm text-black">Zagreb</li>
                 </ul>
               </div>
             </div>
-
             <Dialog.Root>
               <Dialog.Trigger asChild>
                 <Button variant="secondary">Change</Button>
@@ -177,7 +162,6 @@ const MyAccountPage: NextPageWithLayout = () => {
               </Dialog.Content>
             </Dialog.Root>
           </div>
-
           <Dialog.Root>
             <Dialog.Trigger asChild>
               <Button variant="primary" size="lg">
@@ -221,10 +205,8 @@ const MyAccountPage: NextPageWithLayout = () => {
             </Dialog.Content>
           </Dialog.Root>
         </li>
-
         <li>
           <p className="mb-6 text-md">Change password</p>
-
           <p className="mb-12 text-gray-500">
             Perhaps you&apos;ve scribbled your password on a scrap of paper or
             you&apos;re the type who likes to change it every now and then to
@@ -233,7 +215,6 @@ const MyAccountPage: NextPageWithLayout = () => {
             password, we&apos;ll send you an email. Just click on the reset
             button below.
           </p>
-
           <Dialog.Root>
             <Dialog.Trigger asChild>
               <Button size="lg">Reset password</Button>
@@ -257,11 +238,11 @@ const MyAccountPage: NextPageWithLayout = () => {
         </li>
       </ul>
     </div>
+  ) : (
+    <p>Not logged in</p>
   );
 };
-
 MyAccountPage.getLayout = function getLayout(page: React.ReactElement) {
   return <AccountLayout>{page}</AccountLayout>;
 };
-
 export default MyAccountPage;

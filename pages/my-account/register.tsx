@@ -1,13 +1,31 @@
-import * as React from 'react';
+import React from 'react';
 import Link from 'next/link';
-
-import type { NextPageWithLayout } from '@/pages/_app';
-import AuthLayout from '@/layouts/AuthLayout';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/Input';
 import { Heading } from '@/components/ui/Heading';
+import AuthLayout from '@/layouts/AuthLayout';
+import { useCreateCustomer } from 'medusa-react';
+import { Input } from '@/components/Input';
 
-const MyAccountRegisterPage: NextPageWithLayout = () => {
+import { handleRegistration } from '@/lib/context/account-context';
+
+const MyAccountRegisterPage = () => {
+  const createCustomer = useCreateCustomer();
+
+  const handleCreate = async () => {
+    try {
+      const userData = {
+        first_name: 'John',
+        last_name: 'Doe',
+        email: 'john@example.com',
+        password: 'mysecretpassword',
+      };
+      await handleRegistration(userData);
+      console.log('Registration successful');
+    } catch (error) {
+      console.error('Registration failed', error);
+    }
+  };
+
   return (
     <div className="w-full max-w-sm">
       <Heading className="mb-8 !leading-[1.1] text-primary lg:mb-14" size="xl3">
@@ -28,11 +46,9 @@ const MyAccountRegisterPage: NextPageWithLayout = () => {
 
         <Input type="password" label="Confirm Password" className="mb-8" />
 
-        <Link href="/my-account">
-          <Button size="lg" className="w-full">
-            Register
-          </Button>
-        </Link>
+        <button size="lg" className="w-full" onClick={handleCreate}>
+          Register
+        </button>
       </form>
 
       <p className="text-gray-400">

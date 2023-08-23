@@ -75,7 +75,7 @@ export const Input: React.FC<InputProps> = ({
       </label>
 
       {Boolean(errorMessage) && (
-        <span className="helper-message absolute -bottom-6 pt-2 text-xs2 text-red-700">
+        <span className="helper-message absolute -bottom-6 left-0 text-xs2 text-red-700">
           {errorMessage}
         </span>
       )}

@@ -33,13 +33,13 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
         <Input
           type="email"
           label="Email"
-          className="mb-4 lg:mb-8"
+          wrapperClassName="mb-4 lg:mb-8"
           onChange={(value) => setEmail(value.target.value)}
         />
         <Input
           type="password"
           label="Password"
-          className="mb-8"
+          wrapperClassName="mb-8"
           onChange={(value) => setPassword(value.target.value)}
         />
         <Button

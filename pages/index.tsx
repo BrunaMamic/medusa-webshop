@@ -26,7 +26,7 @@ const HomePage: NextPageWithLayout = () => {
           </Heading>
 
           <Link href="/shop">
-            <Button variant="dark" className="mx-auto block" size="lg">
+          <Button variant="dark" className="mx-auto" size="lg">
               Shop now
             </Button>
           </Link>

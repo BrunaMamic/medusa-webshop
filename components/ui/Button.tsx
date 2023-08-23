@@ -5,6 +5,7 @@ import classNames from '@/utils/classNames';
 import { Icon, IconProps } from '@/components/ui/Icon';
 import { AriaButtonProps, useButton } from 'react-aria';
 import { useMergeRefs } from '@chakra-ui/react-use-merge-refs';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export interface RawButtonProps extends AriaButtonProps<'button'> {
   className?: string;
@@ -32,10 +33,14 @@ RawButton.displayName = 'RawButton';
 export interface ButtonProps extends RawButtonProps {
   variant?: 'primary' | 'secondary' | 'tertiary' | 'dark';
   size?: 'sm' | 'lg';
+  isLoading?: boolean;
 }
 
 const baseButtonClasses = [
   'transition-all',
+  'flex',
+  'items-center',
+  'justify-center',
   'relative',
   'italic',
   'font-black',
@@ -76,6 +81,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       variant = 'primary',
       size = 'sm',
+      isLoading,
       className,
       ...rest
     } = props;
@@ -92,6 +98,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       >
         {children}
+
+        {isLoading && (
+          <LoadingSpinner
+            className={classNames(
+              'ml-2',
+              variant === 'primary' && 'fill-primary text-white',
+              variant === 'secondary' && 'fill-white text-primary',
+              variant === 'tertiary' && 'fill-gray-400 text-white',
+              size === 'sm' && '!w-3',
+              size === 'lg' && '!w-4'
+            )}
+          ></LoadingSpinner>
+        )}
       </RawButton>
     );
   }

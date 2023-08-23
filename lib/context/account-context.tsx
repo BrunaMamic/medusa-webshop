@@ -29,7 +29,29 @@ interface AccountProviderProps {
   children?: React.ReactNode;
 }
 
+
+
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
+// export const addAddress = async (
+//   first_name:string, last_name:string
+
+// ) => {
+//   const response = await medusa.customers.addresses.addAddress({
+//   address: {
+//     first_name: "Celia",
+//     last_name: "Schumm",
+//     address_1: "225 Bednar Curve",
+//     city: "Danielville",
+//     country_code: "US",
+//     postal_code: "85137",
+//     phone: "981-596-6748 x90188",
+//     company: "Wyman LLC",
+//     province: "Georgia",
+//     metadata: undefined,
+//     address_2: ''
+//   }
+// })
+// }
 
 export const handleRegistrationClick = async (
   first_name: string,
@@ -77,6 +99,8 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
       refetch()
     ]
   }, []);
+
+
 
   const checkSession = useCallback(() => {
     if (!customer && !retrievingCustomer) {

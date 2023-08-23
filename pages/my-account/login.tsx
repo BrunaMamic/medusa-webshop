@@ -6,12 +6,24 @@ import AuthLayout from '@/layouts/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/Input';
 import { Heading } from '@/components/ui/Heading';
-import { useAccount } from '@/lib/context/account-context';
+import {
+  checkIfCustomerExists,
+  useAccount,
+} from '@/lib/context/account-context';
+
+import { useForm, Controller } from 'react-hook-form';
 
 const MyAccountLoginPage: NextPageWithLayout = () => {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [email, setEmailError] = React.useState('');
+  const [password, setPasswordError] = React.useState('');
   const account = useAccount();
+
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+    watch,
+  } = useForm();
 
   console.log(account.customer);
 
@@ -21,7 +33,30 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
     if (account.customer) {
       router.push('/my-account');
     }
-  }, [account])
+  }, [account]);
+
+  const onSubmit = async (data: any) => {
+    setEmailError('');
+    setPasswordError('');
+
+    const customerExists = await checkIfCustomerExists(data.email);
+
+    if (!customerExists) {
+      setEmailError('Email is not registered');
+      return;
+    }
+
+    const response = await account.handleLogin(data.email, data.password);
+
+    if (response.customer) {
+      account.refetchCustomer();
+      // console.log('Logged in:', response.customer);
+    } else if (response.error?.field === 'email') {
+      setEmailError(response.error.message);
+    } else if (response.error?.field === 'password') {
+      setPasswordError(response.error.message);
+    }
+  };
 
   return (
     <div className="w-full max-w-sm">
@@ -29,21 +64,44 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
         Hey gorgeous,
         <br /> welcome back
       </Heading>
-      <form className="mb-4 xl:mb-16">
-        <Input
-          type="email"
-          label="Email"
-          wrapperClassName="mb-4 lg:mb-8"
-          onChange={(value) => setEmail(value.target.value)}
+      <form className="mb-4 xl:mb-16" onSubmit={handleSubmit(onSubmit)}>
+        <Controller
+          name="email"
+          control={control}
+          rules={{
+            required: 'Email is required',
+            maxLength: { value: 35, message: 'previse slova' },
+            pattern: { value: /\S+@\S+\.\S+/, message: 'unesi pravi format' },
+          }}
+          render={({ field }) => (
+            <Input
+              type="email"
+              label="Email"
+              wrapperClassName="mb-4 lg:mb-8"
+              errorMessage={errors.email?.message || email}
+              {...field}
+            />
+          )}
         />
-        <Input
-          type="password"
-          label="Password"
-          wrapperClassName="mb-8"
-          onChange={(value) => setPassword(value.target.value)}
+
+        <Controller
+          name="password"
+          control={control}
+          rules={{ required: 'Password is required' }}
+          render={({ field }) => (
+            <Input
+              type="password"
+              label="Password"
+              wrapperClassName="mb-8"
+              errorMessage={errors.password?.message}
+              {...field}
+            />
+          )}
         />
+
         <Button
-          onPress={() => account.handleLogin(email, password)}
+          // onPress={() => account.handleLogin(email, password)}
+          type="submit"
           size="lg"
           className="w-full"
         >

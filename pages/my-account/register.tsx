@@ -22,14 +22,6 @@ const MyAccountRegisterPage = () => {
   
 
   const onSubmit = async (data: any) => {
-    // try {
-    //   passwordSchema.parse(data.password);
-    // } catch (error) {
-    //   console.log('Password validation error:', error.message);
-    //   return;
-    // }
-
-    // if (data.password === data.passConf) {
       const customer = await handleRegistrationClick(
         data.firstName,
         data.lastName,
@@ -44,10 +36,6 @@ const MyAccountRegisterPage = () => {
 
       router.push('/my-account');
     }
-    //  else {
-    //   setPasswordsMatch(false);
-    // }
-  // };
 
   return (
     <div className="w-full max-w-sm">

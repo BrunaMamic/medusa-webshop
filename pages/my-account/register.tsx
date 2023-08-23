@@ -1,31 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Heading } from '@/components/ui/Heading';
 import AuthLayout from '@/layouts/AuthLayout';
 import { useCreateCustomer } from 'medusa-react';
 import { Input } from '@/components/Input';
+import { useAccount } from '@/lib/context/account-context';
 
-import { handleRegistration } from '@/lib/context/account-context';
+import { handleRegistrationClick } from '@/lib/context/account-context';
+import router from 'next/router';
 
 const MyAccountRegisterPage = () => {
-  const createCustomer = useCreateCustomer();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const account = useAccount();
 
-  const handleCreate = async () => {
-    try {
-      const userData = {
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
-        password: 'mysecretpassword',
-      };
-      await handleRegistration(userData);
-      console.log('Registration successful');
-    } catch (error) {
-      console.error('Registration failed', error);
-    }
-  };
-
+  console.log(account.customer);
   return (
     <div className="w-full max-w-sm">
       <Heading className="mb-8 !leading-[1.1] text-primary lg:mb-14" size="xl3">
@@ -35,20 +27,60 @@ const MyAccountRegisterPage = () => {
 
       <form className="mb-4 xl:mb-16">
         <div className="mb-4 flex flex-col gap-x-6 gap-y-4 sm:flex-row lg:mb-8 lg:gap-y-8">
-          <Input type="text" label="First name" wrapperClassName="flex-1" />
+          <Input
+            type="text"
+            label="First name"
+            wrapperClassName="flex-1"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
 
-          <Input type="text" label="Last name" wrapperClassName="flex-1" />
+          <Input
+            type="text"
+            label="Last name"
+            wrapperClassName="flex-1"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
         </div>
 
-        <Input type="email" label="Email" className="mb-4 lg:mb-8" />
+        <Input
+          type="email"
+          label="Email"
+          className="mb-4 lg:mb-8"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        <Input type="password" label="Password" className="mb-4 lg:mb-8" />
+        <Input
+          type="password"
+          label="Password"
+          className="mb-4 lg:mb-8"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
         <Input type="password" label="Confirm Password" className="mb-8" />
 
-        <button size="lg" className="w-full" onClick={handleCreate}>
+        <Button
+          size="lg"
+          className="w-full"
+          onPress={async () => {
+            const customer = await handleRegistrationClick(
+              firstName,
+              lastName,
+              email,
+              password
+            );
+
+            if (customer) {
+              account.refetchCustomer()
+            };
+            router.push("/my-account")
+          }}
+        >
           Register
-        </button>
+        </Button>
       </form>
 
       <p className="text-gray-400">
@@ -61,7 +93,7 @@ const MyAccountRegisterPage = () => {
         </Link>
       </p>
     </div>
-  );
+  )
 };
 
 MyAccountRegisterPage.getLayout = function getLayout(page: React.ReactElement) {

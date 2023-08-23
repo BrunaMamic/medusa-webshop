@@ -1,11 +1,12 @@
 'use client';
 
-import { medusaClient } from '../config';
+import { MEDUSA_BACKEND_URL, medusaClient } from '../config';
 import { Customer } from '@medusajs/medusa';
 import { useMutation } from '@tanstack/react-query';
 import { useMeCustomer } from 'medusa-react';
 import { useRouter } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useState } from 'react';
+import Medusa from '@medusajs/medusa-js';
 
 export enum LOGIN_VIEW {
   SIGN_IN = 'sign-in',
@@ -19,6 +20,7 @@ interface AccountContext {
   checkSession: () => void;
   refetchCustomer: () => void;
   handleLogout: () => void;
+  handleLogin: (email: string, pass: string) => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContext | null>(null);
@@ -27,21 +29,23 @@ interface AccountProviderProps {
   children?: React.ReactNode;
 }
 
-export const handleRegistration = async (userData:any) => {
-  try {
-    const response = await medusaClient.customers.create(userData);
-    return response.response;
-  } catch (error) {
-    throw error;
-  }
+const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
+
+export const handleRegistrationClick = async (
+  first_name: string,
+  last_name: string,
+  email: string,
+  password: any
+) => {
+  const response = await medusa.customers.create({
+    first_name: first_name,
+    last_name: last_name,
+    email: email,
+    password: password,
+  });
+  return response.customer;
 };
 
-export const handleLogin = () => {
-  return medusaClient.auth.authenticate({
-    email: '',
-    password: '',
-  });
-};
 export const checkIfCustomerExists = async (email: string) => {
   const { exists } = await medusaClient.auth.exists(email);
   return exists;
@@ -63,6 +67,17 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
 
   const router = useRouter();
 
+  const handleLogin = useCallback(async (email: string, password: string) => {
+    const response = await medusaClient.auth.authenticate({
+      email: email,
+      password: password,
+    });
+    
+    if (response.customer) [
+      refetch()
+    ]
+  }, []);
+
   const checkSession = useCallback(() => {
     if (!customer && !retrievingCustomer) {
       router.push('/account/login');
@@ -79,7 +94,7 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
       onSuccess: () => {
         remove();
         loginView[1](LOGIN_VIEW.SIGN_IN);
-        router.push('/');
+        router.push('/my-account/login');
       },
     });
   };
@@ -93,6 +108,7 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
         checkSession,
         refetchCustomer: refetch,
         handleLogout,
+        handleLogin,
       }}
     >
       {children}

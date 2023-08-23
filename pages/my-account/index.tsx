@@ -10,6 +10,8 @@ import { SelectCountry } from '@/components/SelectCountry';
 import { useAccount } from '@/lib/context/account-context';
 const MyAccountPage: NextPageWithLayout = () => {
   const account = useAccount();
+  console.log(account.customer);
+  
   return account.customer ? (
     <div>
       <Heading size="xl" className="mb-8 text-primary lg:mb-15">
@@ -23,11 +25,11 @@ const MyAccountPage: NextPageWithLayout = () => {
             <div className="flex flex-1 flex-wrap gap-8">
               <ul className="flex-1">
                 <li className="mb-0.5 text-xs2 text-gray-400">Name</li>
-                <li className="text-sm text-black">Jovana Jerimic</li>
+                <li className="text-sm text-black">{account.customer.first_name} {account.customer.last_name}</li>
               </ul>
               <ul className="flex-1">
                 <li className="mb-0.5 text-xs2 text-gray-400">Number</li>
-                <li className="break-all text-sm text-black">-</li>
+                <li className="break-all text-sm text-black">{account.customer.phone}</li>
               </ul>
             </div>
             <Dialog.Root>
@@ -80,7 +82,7 @@ const MyAccountPage: NextPageWithLayout = () => {
             <ul className="ml-8">
               <li className="mb-0.5 text-xs2 text-gray-400">Email</li>
               <li className="break-all text-sm text-black">
-                jovana.jerimic@gmail.com
+              {account.customer.email}
               </li>
             </ul>
           </div>

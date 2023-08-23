@@ -1,16 +1,27 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
 import type { NextPageWithLayout } from '@/pages/_app';
 import AuthLayout from '@/layouts/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/Input';
 import { Heading } from '@/components/ui/Heading';
-import { checkIfCustomerExists, handleLogin } from '@/lib/context/account-context';
+import { useAccount } from '@/lib/context/account-context';
 
 const MyAccountLoginPage: NextPageWithLayout = () => {
-  const [email, setEmail] = React.useState("")
-  const router = useRouter()
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const account = useAccount();
+
+  console.log(account.customer);
+
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (account.customer) {
+      router.push('/my-account');
+    }
+  }, [account])
 
   return (
     <div className="w-full max-w-sm">
@@ -19,15 +30,23 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
         <br /> welcome back
       </Heading>
       <form className="mb-4 xl:mb-16">
-        <Input type="email" label="Email" className="mb-4 lg:mb-8" onChange={(value) => setEmail(value.target.value)} />
-        <Input type="password" label="Password" className="mb-8" />
-        <Button onPress={async () => {
-          const exists = await checkIfCustomerExists(email)
-          if (exists) {
-            handleLogin();
-            router.push("/my-account")
-          }
-        }} size="lg" className="w-full">
+        <Input
+          type="email"
+          label="Email"
+          className="mb-4 lg:mb-8"
+          onChange={(value) => setEmail(value.target.value)}
+        />
+        <Input
+          type="password"
+          label="Password"
+          className="mb-8"
+          onChange={(value) => setPassword(value.target.value)}
+        />
+        <Button
+          onPress={() => account.handleLogin(email, password)}
+          size="lg"
+          className="w-full"
+        >
           Log in
         </Button>
       </form>

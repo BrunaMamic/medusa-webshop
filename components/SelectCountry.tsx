@@ -6,11 +6,13 @@ import { Icon } from '@/components/ui/Icon';
 
 export interface SelectCountryProps {
   errorMessage?: string;
+  defaultValue?: string;
   disabled?: boolean;
 }
 
 export const SelectCountry: React.FC<SelectCountryProps> = ({
   errorMessage,
+  defaultValue = 'Croatia',
   disabled,
 }) => {
   return (
@@ -26,7 +28,7 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
                   baseClasses
                 )}
               >
-                Croatia
+                {defaultValue}
               </div>
 
               <span
@@ -52,13 +54,24 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
           sideOffset={0}
           align="end"
         >
-          <Dropdown.Item className="dropdown-item font-black italic text-primary">
+          <Dropdown.Item
+            className="dropdown-item font-black italic text-primary"
+            id="Croatia"
+          >
             Croatia
           </Dropdown.Item>
-          <Dropdown.Item className="dropdown-item">Germany</Dropdown.Item>
-          <Dropdown.Item className="dropdown-item">Denmark</Dropdown.Item>
-          <Dropdown.Item className="dropdown-item">Austria</Dropdown.Item>
-          <Dropdown.Item className="dropdown-item">Netherlands</Dropdown.Item>
+          <Dropdown.Item className="dropdown-item" id="Germany">
+            Germany
+          </Dropdown.Item>
+          <Dropdown.Item className="dropdown-item" id="Denmark">
+            Denmark
+          </Dropdown.Item>
+          <Dropdown.Item className="dropdown-item" id="Austria">
+            Austria
+          </Dropdown.Item>
+          <Dropdown.Item className="dropdown-item" id="Netherlands">
+            Netherlands
+          </Dropdown.Item>
         </Dropdown.Content>
       </Dropdown.Root>
 

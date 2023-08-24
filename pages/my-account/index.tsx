@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import type { NextPageWithLayout } from '@/pages/_app';
 import AccountLayout from '@/layouts/AccountLayout';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonIcon } from '@/components/ui/Button';
 import * as Dialog from '@/components/ui/Dialog';
 import { Heading } from '@/components/ui/Heading';
 import { Icon } from '@/components/ui/Icon';
@@ -10,27 +10,90 @@ import { Input } from '@/components/Input';
 import { SelectCountry } from '@/components/SelectCountry';
 import { useAccount } from '@/lib/context/account-context';
 import { useState } from 'react';
+import { sortBy } from 'lodash';
+
+import { useForm, Controller } from 'react-hook-form';
 
 const MyAccountPage: NextPageWithLayout = () => {
+  const [country, setCountry] = useState();
+  const [address, setAddress] = useState();
+  const [details, setDetails] = useState();
+  const [postalCode, setPostalCode] = useState();
+  const [city, setCity] = useState();
+
+  const [updatedAddress1, setUpdatedAddress1] = useState();
+  const [updatedAddress2, setUpdatedAddress2] = useState('');
+  const [updatedPostalCode, setUpdatedPostalCode] = useState('');
+  const [updatedCity, setUpdatedCity] = useState('');
+
   const account = useAccount();
-  const [firstName, setFirstName] = useState(account.customer?.first_name);
-  const [lastName, setLastName] = useState(account.customer?.last_name);
-  const [phone, setPhone] = useState(account.customer?.phone);
 
-  console.log(account.customer);
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+    watch,
+  } = useForm();
 
-  const handleUpdateCustomerInfo = async (data: any) => {
-    console.log(data);
+  const handleAddAddress = async () => {
+    const newAddress = {
+      first_name: account.customer?.first_name,
+      last_name: account.customer?.last_name,
+      address_1: address,
+      city: city,
+      country_code: 'US',
+      postal_code: postalCode,
+      phone: account.customer?.phone,
+      company: 'Wyman LLC',
+      province: 'Georgia',
+    };
 
-    const response = await account.updateCustomerInfo(data.firstName, data.lastName, data.phone);
+    const response = await account.addAddress(newAddress);
+    account.refetchCustomer();
+  };
 
-    //do ovde ne dolazi?? response je undefined
+  const onSubmit = async (data: any) => {
+    const response = await account.updateCustomerInfo(
+      data.firstName,
+      data.lastName,
+      data.phone.toString()
+    );
+
     if (response) {
       account.refetchCustomer();
     }
-
   };
-  
+
+  const handleUpdateAddress = async (
+    address_id: string,
+    updatedAddress: any
+  ) => {
+    console.log(address_id);
+    console.log(updatedAddress);
+    const existingAddress = account.customer?.shipping_addresses.find(
+      (address) => address.id === address_id
+    );
+
+    console.log(existingAddress);
+
+    const response = await account.updateAddress(
+      address_id,
+      updatedAddress.address_1 || existingAddress?.address_1,
+      updatedAddress.city || existingAddress?.city,
+      updatedAddress.postal_code || existingAddress?.postal_code
+    );
+
+    setUpdatedAddress1(undefined);
+    setUpdatedAddress2('');
+    setUpdatedPostalCode('');
+  };
+
+  const handleDeleteAddress = async (addressId: any) => {
+    await account.deleteAddress(addressId.id);
+    console.log('deleteddddd');
+    account.refetchCustomer();
+  };
+
   return account.customer ? (
     <div>
       <Heading size="xl" className="mb-8 text-primary lg:mb-15">
@@ -67,40 +130,82 @@ const MyAccountPage: NextPageWithLayout = () => {
                 </Button>
               </Dialog.Trigger>
               <Dialog.Overlay />
-              <form>
+              <form onSubmit={handleSubmit(onSubmit)}>
                 <Dialog.Content>
                   <Dialog.Title>Personal information</Dialog.Title>
-                  {/* forma ??? */}
                   <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
-                    <Input
-                      type="text"
-                      label="First name"
-                      wrapperClassName="flex-1"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
+                    <Controller
+                      name="firstName"
+                      control={control}
+                      rules={{
+                        minLength: { value: 2, message: 'premalo slova' },
+                        maxLength: { value: 15, message: 'previse slova' },
+                        pattern: {
+                          value: /^[a-zA-Z]+$/,
+                          message: 'samo slova dopustena',
+                        },
+                      }}
+                      render={({ field }) => (
+                        <Input
+                          type="text"
+                          label="First name"
+                          wrapperClassName="flex-1"
+                          errorMessage={errors.firstName?.message}
+                          {...field}
+                        />
+                      )}
                     />
-                    <Input
-                      type="text"
-                      label="Last name"
-                      wrapperClassName="flex-1"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
+
+                    <Controller
+                      name="lastName"
+                      control={control}
+                      rules={{
+                        minLength: { value: 2, message: 'premalo slova' },
+                        maxLength: { value: 15, message: 'previse slova' },
+                        pattern: {
+                          value: /^[a-zA-Z]+$/,
+                          message: 'samo slova dopustena',
+                        },
+                      }}
+                      render={({ field }) => (
+                        <Input
+                          type="text"
+                          label="Last name"
+                          wrapperClassName="flex-1"
+                          errorMessage={errors.lastName?.message}
+                          {...field}
+                        />
+                      )}
                     />
                   </div>
-                  <Input
-                    type="phone"
-                    label="Phone"
-                    wrapperClassName="mb-4 lg:mb-10"
-                    defaultValue="+385"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                  <Controller
+                    name="phone"
+                    control={control}
+                    rules={{
+                      maxLength: { value: 10, message: 'previse brojeva' },
+                      pattern: {
+                        value:
+                          /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
+                        message: 'krivi format broja mobitela',
+                      },
+                    }}
+                    render={({ field }) => (
+                      <Input
+                        type="text"
+                        label="Phone"
+                        wrapperClassName="mb-4 lg:mb-10"
+                        errorMessage={errors.phone?.message}
+                        {...field}
+                      />
+                    )}
                   />
+
                   <div className="flex justify-between">
                     <Dialog.Close asChild>
                       <Button
                         variant="primary"
                         aria-label="Save changes"
-                        onPress={() => handleUpdateCustomerInfo({firstName: firstName, lastName:lastName, phone:phone})}
+                        type="submit"
                       >
                         Save changes
                       </Button>
@@ -113,8 +218,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                   </div>
                 </Dialog.Content>
               </form>
-
-              {/* zatvori formu */}
             </Dialog.Root>
           </div>
         </li>
@@ -141,82 +244,143 @@ const MyAccountPage: NextPageWithLayout = () => {
 
         <li>
           <p className="mb-6 text-md">Address</p>
+          {account.customer &&
+            account.customer.shipping_addresses.length === 0 && <p>nema</p>}
 
-          <div className="mb-10 flex flex-wrap items-start justify-between gap-8 rounded-sm border border-gray-200 p-4">
-            <Icon name="user" className="shrink-0" />
+          {account.customer &&
+            sortBy(account.customer.shipping_addresses, 'created_at').map(
+              (address) => (
+                <div
+                  key={address.id}
+                  className="mb-10 flex flex-wrap items-start justify-between gap-8 rounded-sm border border-gray-200 p-4"
+                >
+                  <Icon name="user" className="shrink-0" />
 
-            <div className="mr-auto flex-1 self-start">
-              <div className="mb-8 flex gap-8">
-                <ul className="flex-1">
-                  <li className="mb-0.5 text-xs2 text-gray-400">Country</li>
-                  <li className="text-sm text-black">Croatia</li>
-                </ul>
+                  <div className="mr-auto flex-1 self-start">
+                    <div className="mb-8 flex gap-8">
+                      <ul className="flex-1">
+                        <li className="mb-0.5 text-xs2 text-gray-400">
+                          Country
+                        </li>
+                        <li className="text-sm text-black">
+                          {address.country_code}
+                        </li>
+                      </ul>
 
-                <ul className="flex-1">
-                  <li className="mb-0.5 text-xs2 text-gray-400">Address</li>
-                  <li className="text-sm text-black">Duvanjsa 3</li>
-                </ul>
-              </div>
-              <ul className="mb-8 flex-1 gap-4">
-                <li className="mb-0.5 text-xs2 text-gray-400">
-                  Apartment, suite, etc. (Optional)
-                </li>
-                <li className="text-sm text-black">Kat 2</li>
-              </ul>
-              <div className="flex gap-8">
-                <ul className="flex-1">
-                  <li className="mb-0.5 text-xs2 text-gray-400">Postal Code</li>
-                  <li className="text-sm text-black">10000</li>
-                </ul>
+                      <ul className="flex-1">
+                        <li className="mb-0.5 text-xs2 text-gray-400">
+                          Address
+                        </li>
+                        <li className="text-sm text-black">
+                          {address.address_1}
+                        </li>
+                      </ul>
+                    </div>
+                    <ul className="mb-8 flex-1 gap-4">
+                      <li className="mb-0.5 text-xs2 text-gray-400">
+                        Apartment, suite, etc. (Optional)
+                      </li>
+                      <li className="text-sm text-black">
+                        {address.address_2}
+                      </li>
+                    </ul>
+                    <div className="flex gap-8">
+                      <ul className="flex-1">
+                        <li className="mb-0.5 text-xs2 text-gray-400">
+                          Postal Code
+                        </li>
+                        <li className="text-sm text-black">
+                          {address.postal_code}
+                        </li>
+                      </ul>
 
-                <ul className="flex-1">
-                  <li className="mb-0.5 text-xs2 text-gray-400">City</li>
-                  <li className="text-sm text-black">Zagreb</li>
-                </ul>
-              </div>
-            </div>
+                      <ul className="flex-1">
+                        <li className="mb-0.5 text-xs2 text-gray-400">City</li>
+                        <li className="text-sm text-black">{address.city}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="ml-auto flex gap-x-4">
+                    <ButtonIcon
+                      size="lg"
+                      iconName="trash"
+                      variant="secondary"
+                      className="mt-2"
+                      onPress={() => {
+                        handleDeleteAddress(address.id);
+                      }}
+                    />
 
-            <Dialog.Root>
-              <Dialog.Trigger asChild>
-                <Button variant="secondary">Change</Button>
-              </Dialog.Trigger>
-              <Dialog.Overlay />
-              <Dialog.Content>
-                <Dialog.Title>Change address</Dialog.Title>
-                <SelectCountry />
-                <Input
-                  type="text"
-                  label="Address"
-                  wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
-                />
-                <Input
-                  type="text"
-                  label="Apartment, suite, etc. (Optional)"
-                  wrapperClassName="flex-1 mb-4 lg:mb-8"
-                />
-                <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
-                  <Input
-                    type="number"
-                    label="Postal Code"
-                    wrapperClassName="flex-1"
-                  />
-                  <Input type="text" label="City" wrapperClassName="flex-1" />
+                    <Dialog.Root>
+                      <Dialog.Trigger asChild>
+                        <Button variant="secondary">Change</Button>
+                      </Dialog.Trigger>
+                      <Dialog.Overlay />
+                      <Dialog.Content>
+                        <Dialog.Title>Change address</Dialog.Title>
+
+                        <SelectCountry />
+
+                        <Input
+                          type="text"
+                          label="Address"
+                          wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
+                          onChange={(e: any) =>
+                            setUpdatedAddress1(e.target.value)
+                          }
+                        />
+                        <Input
+                          type="text"
+                          label="Apartment, suite, etc. (Optional)"
+                          wrapperClassName="flex-1 mb-4 lg:mb-8"
+                          onChange={(e) => setUpdatedAddress2(e.target.value)}
+                        />
+                        <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
+                          <Input
+                            type="number"
+                            label="Postal Code"
+                            wrapperClassName="flex-1"
+                            onChange={(e: any) =>
+                              setUpdatedPostalCode(e.target.value)
+                            }
+                          />
+                          <Input
+                            type="text"
+                            label="City"
+                            wrapperClassName="flex-1"
+                            onChange={(e) => setUpdatedCity(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex justify-between">
+                          <Dialog.Close asChild>
+                            <Button
+                              variant="primary"
+                              aria-label="Save changes"
+                              onPress={() => {
+                                const updatedAddress = {
+                                  address_1: updatedAddress1,
+                                  address_2: updatedAddress2,
+                                  postal_code: updatedPostalCode,
+                                  city: updatedCity,
+                                };
+                                handleUpdateAddress(address.id, updatedAddress);
+                              }}
+                            >
+                              Save changes
+                            </Button>
+                          </Dialog.Close>
+                          <Dialog.Close asChild>
+                            <Button variant="secondary" aria-label="Cancel">
+                              Cancel
+                            </Button>
+                          </Dialog.Close>
+                        </div>
+                      </Dialog.Content>
+                    </Dialog.Root>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <Dialog.Close asChild>
-                    <Button variant="primary" aria-label="Save changes">
-                      Save changes
-                    </Button>
-                  </Dialog.Close>
-                  <Dialog.Close asChild>
-                    <Button variant="secondary" aria-label="Cancel">
-                      Cancel
-                    </Button>
-                  </Dialog.Close>
-                </div>
-              </Dialog.Content>
-            </Dialog.Root>
-          </div>
+              )
+            )}
 
           <Dialog.Root>
             <Dialog.Trigger asChild>
@@ -232,23 +396,39 @@ const MyAccountPage: NextPageWithLayout = () => {
                 type="text"
                 label="Address"
                 wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
+                value={address}
+                onChange={(e: any) => setAddress(e.target.value)}
               />
               <Input
                 type="text"
                 label="Apartment, suite, etc. (Optional)"
                 wrapperClassName="flex-1 mb-4 lg:mb-8"
+                value={details}
+                onChange={(e: any) => setDetails(e.target.value)}
               />
               <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
                 <Input
                   type="number"
                   label="Postal Code"
                   wrapperClassName="flex-1"
+                  value={postalCode}
+                  onChange={(e: any) => setPostalCode(e.target.value)}
                 />
-                <Input type="text" label="City" wrapperClassName="flex-1" />
+                <Input
+                  type="text"
+                  label="City"
+                  wrapperClassName="flex-1"
+                  value={city}
+                  onChange={(e: any) => setCity(e.target.value)}
+                />
               </div>
               <div className="flex justify-between">
                 <Dialog.Close asChild>
-                  <Button variant="primary" aria-label="Save changes">
+                  <Button
+                    variant="primary"
+                    aria-label="Save changes"
+                    onPress={handleAddAddress}
+                  >
                     Add address
                   </Button>
                 </Dialog.Close>

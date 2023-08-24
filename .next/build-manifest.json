@@ -27,10 +27,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/my-account.js"
     ],
-    "/my-account/login": [
+    "/my-account/payment-method": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/my-account/login.js"
+      "static/chunks/pages/my-account/payment-method.js"
     ]
   },
   "ampFirstPages": []

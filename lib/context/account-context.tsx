@@ -1,7 +1,7 @@
 'use client';
 
 import { MEDUSA_BACKEND_URL, medusaClient } from '../config';
-import { Customer } from '@medusajs/medusa';
+import { Customer, StorePostCustomersCustomerAddressesAddressReq } from '@medusajs/medusa';
 import { useMutation } from '@tanstack/react-query';
 import { useMeCustomer } from 'medusa-react';
 import { useRouter } from 'next/navigation';
@@ -24,8 +24,17 @@ interface AccountContext {
   updateCustomerInfo: (
     first_name: string,
     last_name: string,
-    phone: number
+    phone: any
   ) => Promise<any>;
+  addAddress: (
+    address: any,
+  ) => Promise<any>;
+  updateAddress: (
+    address_id: any,
+    address_1: any,
+    city: any,
+    postal_code: any,
+  ) => Promise<any>
 }
 
 const AccountContext = createContext<AccountContext | null>(null);
@@ -35,26 +44,6 @@ interface AccountProviderProps {
 }
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
-// export const addAddress = async (
-//   first_name:string, last_name:string
-
-// ) => {
-//   const response = await medusa.customers.addresses.addAddress({
-//   address: {
-//     first_name: "Celia",
-//     last_name: "Schumm",
-//     address_1: "225 Bednar Curve",
-//     city: "Danielville",
-//     country_code: "US",
-//     postal_code: "85137",
-//     phone: "981-596-6748 x90188",
-//     company: "Wyman LLC",
-//     province: "Georgia",
-//     metadata: undefined,
-//     address_2: ''
-//   }
-// })
-// }
 
 export const handleRegistrationClick = async (
   first_name: string,
@@ -104,16 +93,48 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
   const updateCustomerInfo = async (
     first_name: string,
     last_name: string,
-    phone: number
+    phone: any
   ) => {
     const response = await medusaClient.customers.update({
       first_name: first_name,
       last_name: last_name,
-      phone: phone,
+      phone: phone.toString(),
     });
 
     if (response.customer) {
       refetch();
+    }
+  };
+
+
+  const updateAddress = async (
+    address_id: string,
+    address_1: any,
+    city: any,
+    postal_code: any,
+  ) => {
+    const response = await medusaClient.customers.addresses.updateAddress(address_id,{
+      address_1: address_1,
+      city: city,
+      postal_code: postal_code
+
+    });
+    if (response.customer){
+      refetch()
+    }
+
+  }
+
+  const addAddress = async (
+    address: any,
+  ) => {
+    try {
+      const response = await medusa.customers.addresses.addAddress({
+        address: address,
+      });
+      return response;
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -149,6 +170,8 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
         handleLogout,
         handleLogin,
         updateCustomerInfo,
+        addAddress,
+        updateAddress,
       }}
     >
       {children}

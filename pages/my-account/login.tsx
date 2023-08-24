@@ -6,16 +6,15 @@ import AuthLayout from '@/layouts/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/Input';
 import { Heading } from '@/components/ui/Heading';
-import {
-  checkIfCustomerExists,
-  useAccount,
-} from '@/lib/context/account-context';
+import { useAccount } from '@/lib/context/account-context';
 
 import { useForm, Controller } from 'react-hook-form';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const MyAccountLoginPage: NextPageWithLayout = () => {
-  const [email, setEmailError] = React.useState('');
-  const [password, setPasswordError] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
   const account = useAccount();
 
   const {
@@ -35,26 +34,39 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
     }
   }, [account]);
 
+  // const onSubmit = async (data: any) => {
+  //   setEmailError('');
+  //   setPasswordError('');
+
+  //   const customerExists = await checkIfCustomerExists(data.email);
+
+  //   if (!customerExists) {
+  //     setEmailError('Email is not registered');
+  //     return;
+  //   }
+
+  //   const response = await account.handleLogin(data.email, data.password);
+
+  //   if (response.customer) {
+  //     account.refetchCustomer();
+  //     console.log('', response.customer);
+  //   } else if (response.error?.field === 'email') {
+  //     setEmailError(response.error.message);
+  //   } else if (response.error?.field === 'password') {
+  //     setPasswordError(response.error.message);
+  //   }
+  // };
+
   const onSubmit = async (data: any) => {
-    setEmailError('');
-    setPasswordError('');
-
-    const customerExists = await checkIfCustomerExists(data.email);
-
-    if (!customerExists) {
-      setEmailError('Email is not registered');
-      return;
-    }
-
-    const response = await account.handleLogin(data.email, data.password);
-
-    if (response.customer) {
+    setLoading(true);
+  
+    const customer = await account.handleLogin(data.email, data.password);
+    
+    setLoading(false);
+  
+    if (customer) {
       account.refetchCustomer();
-      // console.log('Logged in:', response.customer);
-    } else if (response.error?.field === 'email') {
-      setEmailError(response.error.message);
-    } else if (response.error?.field === 'password') {
-      setPasswordError(response.error.message);
+      console.log('Logged in:', customer);
     }
   };
 
@@ -78,12 +90,11 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
               type="email"
               label="Email"
               wrapperClassName="mb-4 lg:mb-8"
-              errorMessage={errors.email?.message || email}
+              errorMessage={errors.email?.message}
               {...field}
             />
           )}
         />
-
         <Controller
           name="password"
           control={control}
@@ -101,9 +112,11 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
 
         <Button
           // onPress={() => account.handleLogin(email, password)}
-          type="submit"
+          type='submit'
           size="lg"
           className="w-full"
+          disabled={loading}
+          isLoading={loading ? true : false}
         >
           Log in
         </Button>

@@ -9,10 +9,27 @@ import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/Input';
 import { SelectCountry } from '@/components/SelectCountry';
 import { useAccount } from '@/lib/context/account-context';
+import { useState } from 'react';
 
 const MyAccountPage: NextPageWithLayout = () => {
   const account = useAccount();
+  const [firstName, setFirstName] = useState(account.customer?.first_name);
+  const [lastName, setLastName] = useState(account.customer?.last_name);
+  const [phone, setPhone] = useState(account.customer?.phone);
+
   console.log(account.customer);
+
+  const handleUpdateCustomerInfo = async (data: any) => {
+    console.log(data);
+
+    const response = await account.updateCustomerInfo(data.firstName, data.lastName, data.phone);
+
+    //do ovde ne dolazi?? response je undefined
+    if (response) {
+      account.refetchCustomer();
+    }
+
+  };
   
   return account.customer ? (
     <div>
@@ -30,12 +47,16 @@ const MyAccountPage: NextPageWithLayout = () => {
             <div className="flex flex-1 flex-wrap gap-8">
               <ul className="flex-1">
                 <li className="mb-0.5 text-xs2 text-gray-400">Name</li>
-                <li className="text-sm text-black">{account.customer.first_name} {account.customer.last_name}</li>
+                <li className="text-sm text-black">
+                  {account.customer.first_name} {account.customer.last_name}
+                </li>
               </ul>
 
               <ul className="flex-1">
                 <li className="mb-0.5 text-xs2 text-gray-400">Number</li>
-                <li className="break-all text-sm text-black">{account.customer.phone}</li>
+                <li className="break-all text-sm text-black">
+                  {account.customer.phone}
+                </li>
               </ul>
             </div>
 
@@ -46,39 +67,54 @@ const MyAccountPage: NextPageWithLayout = () => {
                 </Button>
               </Dialog.Trigger>
               <Dialog.Overlay />
-              <Dialog.Content>
-                <Dialog.Title>Personal information</Dialog.Title>
-                <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
+              <form>
+                <Dialog.Content>
+                  <Dialog.Title>Personal information</Dialog.Title>
+                  {/* forma ??? */}
+                  <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
+                    <Input
+                      type="text"
+                      label="First name"
+                      wrapperClassName="flex-1"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                    <Input
+                      type="text"
+                      label="Last name"
+                      wrapperClassName="flex-1"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
                   <Input
-                    type="text"
-                    label="First name"
-                    wrapperClassName="flex-1"
+                    type="phone"
+                    label="Phone"
+                    wrapperClassName="mb-4 lg:mb-10"
+                    defaultValue="+385"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                   />
-                  <Input
-                    type="text"
-                    label="Last name"
-                    wrapperClassName="flex-1"
-                  />
-                </div>
-                <Input
-                  type="phone"
-                  label="Phone"
-                  wrapperClassName="mb-4 lg:mb-10"
-                  defaultValue="+385"
-                />
-                <div className="flex justify-between">
-                  <Dialog.Close asChild>
-                    <Button variant="primary" aria-label="Save changes">
-                      Save changes
-                    </Button>
-                  </Dialog.Close>
-                  <Dialog.Close asChild>
-                    <Button variant="secondary" aria-label="Cancel">
-                      Cancel
-                    </Button>
-                  </Dialog.Close>
-                </div>
-              </Dialog.Content>
+                  <div className="flex justify-between">
+                    <Dialog.Close asChild>
+                      <Button
+                        variant="primary"
+                        aria-label="Save changes"
+                        onPress={() => handleUpdateCustomerInfo({firstName: firstName, lastName:lastName, phone:phone})}
+                      >
+                        Save changes
+                      </Button>
+                    </Dialog.Close>
+                    <Dialog.Close asChild>
+                      <Button variant="secondary" aria-label="Cancel">
+                        Cancel
+                      </Button>
+                    </Dialog.Close>
+                  </div>
+                </Dialog.Content>
+              </form>
+
+              {/* zatvori formu */}
             </Dialog.Root>
           </div>
         </li>
@@ -92,7 +128,7 @@ const MyAccountPage: NextPageWithLayout = () => {
             <ul className="ml-8">
               <li className="mb-0.5 text-xs2 text-gray-400">Email</li>
               <li className="break-all text-sm text-black">
-              {account.customer.email}
+                {account.customer.email}
               </li>
             </ul>
           </div>
@@ -262,9 +298,7 @@ const MyAccountPage: NextPageWithLayout = () => {
       </ul>
     </div>
   ) : (
-    <>
-    Not logged in
-    </>
+    <>Not logged in</>
   );
 };
 

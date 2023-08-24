@@ -2,6 +2,6 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/my-account": "pages/my-account.js",
-  "/my-account/login": "pages/my-account/login.js"
+  "/my-account/login": "pages/my-account/login.js",
+  "/my-account": "pages/my-account.js"
 }

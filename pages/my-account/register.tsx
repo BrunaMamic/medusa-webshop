@@ -16,7 +16,6 @@ const passwordSchema = z.string().min(3).max(10)
 const MyAccountRegisterPage = () => {
   const { handleSubmit, control, formState: { errors }, watch} = useForm();
   const account = useAccount();
-  const [passwordsMatch, setPasswordsMatch] = useState(true);
 
   console.log(errors);
   

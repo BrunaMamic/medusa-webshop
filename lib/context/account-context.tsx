@@ -21,6 +21,11 @@ interface AccountContext {
   refetchCustomer: () => void;
   handleLogout: () => void;
   handleLogin: (email: string, pass: string) => Promise<void>;
+  updateCustomerInfo: (
+    first_name: string,
+    last_name: string,
+    phone: number
+  ) => Promise<any>;
 }
 
 const AccountContext = createContext<AccountContext | null>(null);
@@ -28,8 +33,6 @@ const AccountContext = createContext<AccountContext | null>(null);
 interface AccountProviderProps {
   children?: React.ReactNode;
 }
-
-
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 // export const addAddress = async (
@@ -94,13 +97,25 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
       email: email,
       password: password,
     });
-    
-    if (response.customer) [
-      refetch()
-    ]
+
+    if (response.customer) [refetch()];
   }, []);
 
+  const updateCustomerInfo = async (
+    first_name: string,
+    last_name: string,
+    phone: number
+  ) => {
+    const response = await medusaClient.customers.update({
+      first_name: first_name,
+      last_name: last_name,
+      phone: phone,
+    });
 
+    if (response.customer) {
+      refetch();
+    }
+  };
 
   const checkSession = useCallback(() => {
     if (!customer && !retrievingCustomer) {
@@ -133,6 +148,7 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
         refetchCustomer: refetch,
         handleLogout,
         handleLogin,
+        updateCustomerInfo,
       }}
     >
       {children}

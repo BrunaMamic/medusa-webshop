@@ -3,18 +3,22 @@ import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import classNames from '@/utils/classNames';
 import { baseClasses, labelBaseClasses } from '@/components/Input';
 import { Icon } from '@/components/ui/Icon';
-
+import { useStore } from '@/lib/context/store-context';
+import { Country } from '@medusajs/medusa';
 export interface SelectCountryProps {
   errorMessage?: string;
-  defaultValue?: string;
   disabled?: boolean;
+  defaultValue?: string;
+  selectedCountry: Country | undefined;
+  onCountryChange: (country: Country) => void;
 }
-
 export const SelectCountry: React.FC<SelectCountryProps> = ({
   errorMessage,
-  defaultValue = 'Croatia',
   disabled,
+  selectedCountry,
+  onCountryChange,
 }) => {
+  const { cart } = useStore();
   return (
     <div className="dropdown-full-width">
       <Dropdown.Root>
@@ -28,9 +32,8 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
                   baseClasses
                 )}
               >
-                {defaultValue}
+                {selectedCountry?.display_name}
               </div>
-
               <span
                 className={classNames(
                   'left-2.5 top-1 lg:left-4.5 lg:top-3',
@@ -40,7 +43,6 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
               >
                 Country
               </span>
-
               <Icon
                 name="chevron-down"
                 className="pointer-events-none absolute right-4 top-3 transition-all lg:top-5"
@@ -48,33 +50,23 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
             </div>
           </button>
         </Dropdown.Trigger>
-
         <Dropdown.Content
           className="dropdown-content relative"
           sideOffset={0}
           align="end"
         >
-          <Dropdown.Item
-            className="dropdown-item font-black italic text-primary"
-            id="Croatia"
-          >
-            Croatia
-          </Dropdown.Item>
-          <Dropdown.Item className="dropdown-item" id="Germany">
-            Germany
-          </Dropdown.Item>
-          <Dropdown.Item className="dropdown-item" id="Denmark">
-            Denmark
-          </Dropdown.Item>
-          <Dropdown.Item className="dropdown-item" id="Austria">
-            Austria
-          </Dropdown.Item>
-          <Dropdown.Item className="dropdown-item" id="Netherlands">
-            Netherlands
-          </Dropdown.Item>
+          {cart?.region.countries.map((country:any) => {          
+            return (
+              <Dropdown.Item
+                className="dropdown-item font-black italic text-primary"
+                onSelect={() => onCountryChange(country)}
+              >
+                {country.display_name}
+              </Dropdown.Item>
+            );
+          })}
         </Dropdown.Content>
       </Dropdown.Root>
-
       {Boolean(errorMessage) && (
         <span className="pt-2 text-xs2 text-red-700">{errorMessage}</span>
       )}

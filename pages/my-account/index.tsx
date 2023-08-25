@@ -13,9 +13,10 @@ import { useState } from 'react';
 import { sortBy } from 'lodash';
 
 import { useForm, Controller } from 'react-hook-form';
+import { Country } from '@medusajs/medusa';
+import { useStore } from '@/lib/context/store-context';
 
 const MyAccountPage: NextPageWithLayout = () => {
-  const [country, setCountry] = useState();
   const [address, setAddress] = useState();
   const [details, setDetails] = useState();
   const [postalCode, setPostalCode] = useState();
@@ -27,6 +28,7 @@ const MyAccountPage: NextPageWithLayout = () => {
   const [updatedCity, setUpdatedCity] = useState('');
 
   const account = useAccount();
+  const { cart } = useStore();
 
   const {
     handleSubmit,
@@ -35,13 +37,39 @@ const MyAccountPage: NextPageWithLayout = () => {
     watch,
   } = useForm();
 
+  const [selectedCountry, setSelectedCountry] = React.useState<
+    Country | undefined
+  >();
+  const [updatedCountry, setUpdatedCountry] = React.useState<
+    Country | undefined
+  >();
+
+  const handleCountryChange = (country: Country) => {
+    setSelectedCountry(country);
+  };
+
+  const onSubmit = async (data: any) => {
+    console.log(data);
+
+    const response = await account.updateCustomerInfo(
+      data.firstName,
+      data.lastName,
+      data.phone?.toString() || data.phone
+    );
+
+    if (response) {
+      account.refetchCustomer();
+    }
+  };
+
   const handleAddAddress = async () => {
     const newAddress = {
       first_name: account.customer?.first_name,
       last_name: account.customer?.last_name,
       address_1: address,
+      address_2: details,
       city: city,
-      country_code: 'US',
+      country_code: selectedCountry?.iso_2,
       postal_code: postalCode,
       phone: account.customer?.phone,
       company: 'Wyman LLC',
@@ -52,36 +80,24 @@ const MyAccountPage: NextPageWithLayout = () => {
     account.refetchCustomer();
   };
 
-  const onSubmit = async (data: any) => {
-    const response = await account.updateCustomerInfo(
-      data.firstName,
-      data.lastName,
-      data.phone.toString()
-    );
-
-    if (response) {
-      account.refetchCustomer();
-    }
-  };
-
   const handleUpdateAddress = async (
     address_id: string,
     updatedAddress: any
   ) => {
-    console.log(address_id);
-    console.log(updatedAddress);
     const existingAddress = account.customer?.shipping_addresses.find(
       (address) => address.id === address_id
     );
 
-    console.log(existingAddress);
-
     const response = await account.updateAddress(
       address_id,
       updatedAddress.address_1 || existingAddress?.address_1,
+      updatedAddress.address_2 || existingAddress?.address_2,
+      updatedAddress.country_code?.iso_2 || existingAddress?.country_code,
       updatedAddress.city || existingAddress?.city,
       updatedAddress.postal_code || existingAddress?.postal_code
     );
+
+    console.log(updatedAddress.country_code, existingAddress?.country_code);
 
     setUpdatedAddress1(undefined);
     setUpdatedAddress2('');
@@ -89,9 +105,11 @@ const MyAccountPage: NextPageWithLayout = () => {
   };
 
   const handleDeleteAddress = async (addressId: any) => {
-    await account.deleteAddress(addressId.id);
-    console.log('deleteddddd');
-    account.refetchCustomer();
+    const updatedCustomer = await account.deleteAddress(addressId);
+    if (updatedCustomer) {
+      console.log('deleted');
+      account.refetchCustomer();
+    }
   };
 
   return account.customer ? (
@@ -145,7 +163,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                           message: 'samo slova dopustena',
                         },
                       }}
-                      render={({ field }) => (
+                      render={({ field }: any) => (
                         <Input
                           type="text"
                           label="First name"
@@ -167,7 +185,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                           message: 'samo slova dopustena',
                         },
                       }}
-                      render={({ field }) => (
+                      render={({ field }: any) => (
                         <Input
                           type="text"
                           label="Last name"
@@ -189,7 +207,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                         message: 'krivi format broja mobitela',
                       },
                     }}
-                    render={({ field }) => (
+                    render={({ field }: any) => (
                       <Input
                         type="text"
                         label="Phone"
@@ -249,7 +267,7 @@ const MyAccountPage: NextPageWithLayout = () => {
 
           {account.customer &&
             sortBy(account.customer.shipping_addresses, 'created_at').map(
-              (address) => (
+              (address: any) => (
                 <div
                   key={address.id}
                   className="mb-10 flex flex-wrap items-start justify-between gap-8 rounded-sm border border-gray-200 p-4"
@@ -263,7 +281,14 @@ const MyAccountPage: NextPageWithLayout = () => {
                           Country
                         </li>
                         <li className="text-sm text-black">
-                          {address.country_code}
+                          {
+                            cart?.region?.countries.find(
+                              (country: any) =>
+                                country?.iso_2 === address?.country_code
+                                // or
+                                // `${address.country_code}`
+                            )?.display_name
+                          }
                         </li>
                       </ul>
 
@@ -313,18 +338,36 @@ const MyAccountPage: NextPageWithLayout = () => {
 
                     <Dialog.Root>
                       <Dialog.Trigger asChild>
-                        <Button variant="secondary">Change</Button>
+                        <Button
+                          variant="secondary"
+                          onPress={() => {
+                            const country = (
+                              cart?.region?.countries || []
+                            ).find(
+                              (country) =>
+                                country.iso_2 === address.country_code
+                            );
+                            console.log(country);
+                            setSelectedCountry(country);
+                          }}
+                        >
+                          Change
+                        </Button>
                       </Dialog.Trigger>
                       <Dialog.Overlay />
                       <Dialog.Content>
                         <Dialog.Title>Change address</Dialog.Title>
 
-                        <SelectCountry />
+                        <SelectCountry
+                          selectedCountry={selectedCountry}
+                          onCountryChange={handleCountryChange}
+                        />
 
                         <Input
                           type="text"
                           label="Address"
                           wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
+                          defaultValue={address.address_1}
                           onChange={(e: any) =>
                             setUpdatedAddress1(e.target.value)
                           }
@@ -333,6 +376,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                           type="text"
                           label="Apartment, suite, etc. (Optional)"
                           wrapperClassName="flex-1 mb-4 lg:mb-8"
+                          defaultValue={address.address_2}
                           onChange={(e) => setUpdatedAddress2(e.target.value)}
                         />
                         <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
@@ -360,10 +404,20 @@ const MyAccountPage: NextPageWithLayout = () => {
                                 const updatedAddress = {
                                   address_1: updatedAddress1,
                                   address_2: updatedAddress2,
+                                  country_code: selectedCountry,
                                   postal_code: updatedPostalCode,
                                   city: updatedCity,
                                 };
                                 handleUpdateAddress(address.id, updatedAddress);
+
+                                const country = (
+                                  cart?.region?.countries || []
+                                ).find(
+                                  (country) =>
+                                    country.iso_2 === address.country_code
+                                );
+                                console.log(country);
+                                setSelectedCountry(country);
                               }}
                             >
                               Save changes
@@ -391,12 +445,15 @@ const MyAccountPage: NextPageWithLayout = () => {
             <Dialog.Overlay />
             <Dialog.Content>
               <Dialog.Title>Add address</Dialog.Title>
-              <SelectCountry />
+              <SelectCountry
+                selectedCountry={selectedCountry}
+                onCountryChange={handleCountryChange}
+              />
               <Input
                 type="text"
                 label="Address"
                 wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
-                value={address}
+                defaultValue={address}
                 onChange={(e: any) => setAddress(e.target.value)}
               />
               <Input

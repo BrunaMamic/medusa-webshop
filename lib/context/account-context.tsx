@@ -32,9 +32,12 @@ interface AccountContext {
   updateAddress: (
     address_id: any,
     address_1: any,
+    address_2: any,
+    country_code: any,
     city: any,
     postal_code: any,
-  ) => Promise<any>
+  ) => Promise<any>;
+  deleteAddress: (addressId: any)=> Promise<any>
 }
 
 const AccountContext = createContext<AccountContext | null>(null);
@@ -98,7 +101,7 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
     const response = await medusaClient.customers.update({
       first_name: first_name,
       last_name: last_name,
-      phone: phone.toString(),
+      phone: phone || phone,
     });
 
     if (response.customer) {
@@ -106,15 +109,18 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
     }
   };
 
-
   const updateAddress = async (
     address_id: string,
     address_1: any,
+    address_2: any,
+    country_code: any,
     city: any,
     postal_code: any,
   ) => {
     const response = await medusaClient.customers.addresses.updateAddress(address_id,{
       address_1: address_1,
+      address_2: address_2,
+      country_code: country_code,
       city: city,
       postal_code: postal_code
 
@@ -124,6 +130,19 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
     }
 
   }
+
+  const deleteAddress = async (addressId:any) => {
+    try {
+      const response = await medusaClient.customers.addresses.deleteAddress(addressId);
+      if (response.customer) {
+        return response.customer;
+      }
+      return null; 
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      return null;
+    }
+  };
 
   const addAddress = async (
     address: any,
@@ -172,6 +191,7 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
         updateCustomerInfo,
         addAddress,
         updateAddress,
+        deleteAddress,
       }}
     >
       {children}

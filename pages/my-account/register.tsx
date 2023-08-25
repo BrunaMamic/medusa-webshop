@@ -3,38 +3,53 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Heading } from '@/components/ui/Heading';
 import AuthLayout from '@/layouts/AuthLayout';
-import { useAccount } from '@/lib/context/account-context';
+import {
+  useAccount,
+  checkIfCustomerExists,
+} from '@/lib/context/account-context';
 import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/Input';
 import { handleRegistrationClick } from '@/lib/context/account-context';
 import router from 'next/router';
 
-import { z } from 'zod'; 
+import { z } from 'zod';
 
-const passwordSchema = z.string().min(3).max(10)
+const passwordSchema = z.string().min(3).max(10);
 
 const MyAccountRegisterPage = () => {
-  const { handleSubmit, control, formState: { errors }, watch} = useForm();
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+    watch,
+  } = useForm();
   const account = useAccount();
 
-  console.log(errors);
-  
+  const [emailError, setEmailError] = useState('');
 
   const onSubmit = async (data: any) => {
-      const customer = await handleRegistrationClick(
-        data.firstName,
-        data.lastName,
-        data.email,
-        data.password
-      );
+    const emailExists = await checkIfCustomerExists(data.email);
 
-      if (customer) {
-        account.refetchCustomer();
-        console.log('kreiran:', customer);
-      }
-
-      router.push('/my-account');
+    if (emailExists) {
+      setEmailError('email postoji');
+      return;
     }
+    
+
+    const customer = await handleRegistrationClick(
+      data.firstName,
+      data.lastName,
+      data.email,
+      data.password
+    );
+
+    if (customer) {
+      account.refetchCustomer();
+      console.log('kreiran:', customer);
+    }
+
+    router.push('/my-account');
+  };
 
   return (
     <div className="w-full max-w-sm">
@@ -48,7 +63,15 @@ const MyAccountRegisterPage = () => {
           <Controller
             name="firstName"
             control={control}
-            rules={{ required: 'First name is required', minLength: {value: 2, message: 'premalo slova'}, maxLength: {value: 15, message: 'previse slova'}, pattern: {value: /^[a-zA-Z]+$/, message:'samo slova dopustena'}}}
+            rules={{
+              required: 'First name is required',
+              minLength: { value: 2, message: 'premalo slova' },
+              maxLength: { value: 15, message: 'previse slova' },
+              pattern: {
+                value: /^[a-zA-Z]+$/,
+                message: 'samo slova dopustena',
+              },
+            }}
             render={({ field }) => (
               <Input
                 type="text"
@@ -63,7 +86,15 @@ const MyAccountRegisterPage = () => {
           <Controller
             name="lastName"
             control={control}
-            rules={{ required: 'Last name is required', minLength: {value: 2, message: 'premalo slova'}, maxLength: {value: 15, message: 'previse slova'}, pattern: {value: /^[a-zA-Z]+$/, message:'samo slova dopustena'}}}
+            rules={{
+              required: 'Last name is required',
+              minLength: { value: 2, message: 'premalo slova' },
+              maxLength: { value: 15, message: 'previse slova' },
+              pattern: {
+                value: /^[a-zA-Z]+$/,
+                message: 'samo slova dopustena',
+              },
+            }}
             render={({ field }) => (
               <Input
                 type="text"
@@ -79,16 +110,22 @@ const MyAccountRegisterPage = () => {
         <Controller
           name="email"
           control={control}
-          rules={{ required: 'Email is required', maxLength: {value: 35, message: 'previse slova'}, pattern: {value: /\S+@\S+\.\S+/, message:'unesi pravi format'}}}
+          rules={{
+            required: 'Email is required',
+            maxLength: { value: 35, message: 'previse slova' },
+            pattern: { value: /\S+@\S+\.\S+/, message: 'unesi pravi format' },
+          }}
           render={({ field }) => (
             <Input
               type="email"
               label="Email"
               wrapperClassName="mb-4 lg:mb-8"
-              errorMessage={errors.email?.message}
+              errorMessage={emailError || errors.email?.message}
               {...field}
             />
+            
           )}
+          
         />
 
         <Controller
@@ -96,7 +133,7 @@ const MyAccountRegisterPage = () => {
           control={control}
           rules={{
             required: 'Password is required',
-            minLength: {value: 3, message: 'vise znakova'}, 
+            minLength: { value: 3, message: 'vise znakova' },
           }}
           // rules={{ required: 'Password is required', maxLength: 10, pattern: /^([@#](?=[^aeiou]{3,10}$)(?=[[:alnum:]]{3,10}$)(?=.*[A-Z]{1,}.*$).+)$/}}
           render={({ field }) => (
@@ -114,7 +151,8 @@ const MyAccountRegisterPage = () => {
           control={control}
           rules={{
             required: 'Password is required',
-            validate: (value) => value === watch('password') || 'Passwords do not match',
+            validate: (value) =>
+              value === watch('password') || 'Passwords do not match',
           }}
           // rules={{ required: 'Password conf is required', maxLength: 10, pattern: /^([@#](?=[^aeiou]{3,10}$)(?=[[:alnum:]]{3,10}$)(?=.*[A-Z]{1,}.*$).+)$/}}
           render={({ field }) => (
@@ -128,7 +166,6 @@ const MyAccountRegisterPage = () => {
             />
           )}
         />
-        
 
         <Button size="lg" className="w-full" type="submit">
           Register

@@ -2,7 +2,7 @@
 
 import { medusaClient } from "../config"
 import { handleError } from "../util/handle-error"
-import { Region } from "@medusajs/medusa"
+import { Cart, Region } from "@medusajs/medusa"
 import {
   useCart,
   useCreateLineItem,
@@ -29,6 +29,7 @@ interface StoreContext {
   updateItem: (item: LineInfoProps) => void
   deleteItem: (lineId: string) => void
   resetCart: () => void
+  cart: Omit<Cart, 'refundable_amount' | 'refunded_total'> | undefined;
 }
 
 const StoreContext = React.createContext<StoreContext | null>(null)
@@ -303,6 +304,7 @@ export const StoreProvider = ({ children }: StoreProps) => {
         deleteItem,
         updateItem,
         resetCart,
+        cart,
       }}
     >
       {children}

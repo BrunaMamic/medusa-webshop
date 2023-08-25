@@ -22,25 +22,15 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/my-account": [
+    "/cart": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/my-account.js"
+      "static/chunks/pages/cart.js"
     ],
-    "/my-account/login": [
+    "/checkout": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/my-account/login.js"
-    ],
-    "/my-account/payment-method": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/my-account/payment-method.js"
-    ],
-    "/my-account/register": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/my-account/register.js"
+      "static/chunks/pages/checkout.js"
     ]
   },
   "ampFirstPages": []

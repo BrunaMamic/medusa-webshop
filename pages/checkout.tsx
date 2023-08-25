@@ -10,11 +10,20 @@ import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import { Tag } from '@/components/ui/Tag';
 import { SelectCountry } from '@/components/SelectCountry';
+import { Country } from '@medusajs/medusa';
+import { useAccount } from '@/lib/context/account-context';
+import { useStore } from '@/lib/context/store-context';
 
 const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
   const [cardAdded, setCardAdded] = React.useState(false);
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
+
+  const account = useAccount();
+  const { cart } = useStore();
+  console.log(cart);
+
+  console.log(account.customer?.shipping_addresses?.[0]);
 
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
@@ -74,8 +83,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                   type="email"
                   label="Email"
                   name="email"
-                  errorMessage="You forgot your email"
+                  // errorMessage="You forgot your email"
                   wrapperClassName="[&>span]:static"
+                  defaultValue={account.customer?.email}
                 />
 
                 <div className="mt-3.5 flex items-start gap-1">
@@ -110,7 +120,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                 </li>
 
                 <li className="w-2/3 break-words text-gray-600 md:w-4/5">
-                  jovana.jerimic@gmail.com
+                  {account.customer?.email}
                 </li>
               </ul>
             )}
@@ -140,7 +150,12 @@ const CheckoutPage: NextPageWithLayout = () => {
             {step === 2 ? (
               <form>
                 <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
-                  <SelectCountry />
+                  <SelectCountry
+                    selectedCountry={undefined}
+                    onCountryChange={function (country: Country): void {
+                      throw new Error('Function not implemented.');
+                    }}
+                  />
 
                   <div className="flex gap-x-4 lg:gap-x-12">
                     <Input
@@ -148,6 +163,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                       label="First name"
                       wrapperClassName="w-full"
                       name="firstName"
+                      defaultValue={account.customer?.first_name}
                     />
 
                     <Input
@@ -155,15 +171,26 @@ const CheckoutPage: NextPageWithLayout = () => {
                       label="Last name"
                       wrapperClassName="w-full"
                       name="lastName"
+                      defaultValue={account.customer?.last_name}
                     />
                   </div>
 
-                  <Input type="text" label="Address" name="address" />
+                  <Input
+                    type="text"
+                    label="Address"
+                    name="address"
+                    defaultValue={
+                      account.customer?.shipping_addresses?.[0]?.address_1!
+                    }
+                  />
 
                   <Input
                     type="text"
                     label="Apartment, suite, etc. (Optional)"
                     name="apartment"
+                    defaultValue={
+                      account.customer?.shipping_addresses?.[0]?.address_2!
+                    }
                   />
 
                   <div className="flex gap-x-4 lg:gap-x-12">
@@ -172,6 +199,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                       label="Postal Code"
                       wrapperClassName="w-full"
                       name="postalCode"
+                      defaultValue={
+                        account.customer?.shipping_addresses?.[0]?.postal_code!
+                      }
                     />
 
                     <Input
@@ -179,14 +209,19 @@ const CheckoutPage: NextPageWithLayout = () => {
                       label="City"
                       wrapperClassName="w-full"
                       name="city"
+                      defaultValue={
+                        account.customer?.shipping_addresses?.[0]?.city!
+                      }
                     />
                   </div>
 
                   <Input
                     type="phone"
                     label="Phone"
-                    defaultValue="+385"
                     name="phone"
+                    defaultValue={
+                      account.customer?.shipping_addresses?.[0]?.phone!
+                    }
                   />
                 </fieldset>
 
@@ -205,7 +240,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Name</li>
 
                   <li className="w-2/3 text-gray-600 md:w-4/5">
-                    Jovana Jerimic
+                    {account.customer?.first_name} {account.customer?.last_name}
                   </li>
                 </ul>
 
@@ -213,7 +248,17 @@ const CheckoutPage: NextPageWithLayout = () => {
                   <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Ship to</li>
 
                   <li className="w-2/3 text-gray-600 md:w-4/5">
-                    Duvanjs 3, 10000 Zagreb, Croata
+                    {account.customer?.shipping_addresses?.[0]?.address_1},{' '}
+                    {account.customer?.shipping_addresses?.[0]?.postal_code}
+                    {account.customer?.shipping_addresses?.[0]?.city},
+                    {
+                      cart?.region?.countries.find(
+                        (country: any) =>
+                          country?.iso_2 ===
+                          account.customer?.shipping_addresses?.[0]
+                            ?.country_code
+                      )?.display_name
+                    }
                   </li>
                 </ul>
 
@@ -221,7 +266,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Phone</li>
 
                   <li className="w-2/3 text-gray-600 md:w-4/5">
-                    +385 226 2266
+                    {account.customer?.shipping_addresses?.[0]?.phone}
                   </li>
                 </ul>
               </ul>
@@ -703,7 +748,7 @@ const CheckoutPage: NextPageWithLayout = () => {
           )}
         >
           <div className="mb-8 flex justify-between text-xs lg:mb-16 lg:text-sm">
-            <span className="block">Order — 1 item</span>
+            <span className="block">Order — {cart?.items.length} items</span>
 
             <button
               className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
@@ -713,37 +758,49 @@ const CheckoutPage: NextPageWithLayout = () => {
             </button>
           </div>
 
-          <div className="group mb-8 flex gap-x-2 gap-y-4 lg:gap-x-4">
-            <Link href="/" className="relative block flex-shrink-0">
-              <Image
-                src="/images/content/item-fresh-bag-white.png"
-                height={144}
-                width={108}
-                className="min-w-[5.625rem] object-cover sm:w-auto"
-                alt="Black sweatshirt"
-              />
+          {cart?.items.map((item, index) => (
+            <div
+              key={index}
+              className="group mb-8 flex gap-x-2 gap-y-4 lg:gap-x-4"
+            >
+              <Link href="/" className="relative block flex-shrink-0">
+                <Image
+                  src={item.thumbnail || ''}
+                  height={144}
+                  width={108}
+                  className="min-w-[5.625rem] object-cover sm:w-auto"
+                  alt={item.title || ''}
+                />
 
-              <Tag variant="discount" className="absolute bottom-2 right-2">
-                -50%
-              </Tag>
-            </Link>
+                {/* <Tag variant="discount" className="absolute bottom-2 right-2">
+        {`-${item.discountPercentage}%`}
+      </Tag> */}
+              </Link>
 
-            <ul className="relative inline-flex h-full w-full flex-col">
-              <li className="text-xs font-black italic lg:text-md">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs sm:text-md">Fresh Tote</p>
-                  <ul className="relative items-center gap-2 text-xs sm:mt-0 sm:block sm:self-start">
-                    <li className="font-bold text-red-700 sm:text-md">€15</li>
-                    <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
-                      €30
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li className="text-xs2 text-gray-400 lg:text-sm">White / L</li>
-              <li className="text-xs2 text-gray-400 lg:text-sm">1</li>
-            </ul>
-          </div>
+              <ul className="relative inline-flex h-full w-full flex-col">
+                <li className="text-xs font-black italic lg:text-md">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs sm:text-md">{item.title}</p>
+                    <ul className="relative items-center gap-2 text-xs sm:mt-0 sm:block sm:self-start">
+                      <li className="font-bold text-red-700 sm:text-md">
+                        {(item?.total! / 100).toFixed(2)}{' '}
+                        {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                      </li>
+                      {/* <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
+              {item.originalPrice}
+            </li> */}
+                    </ul>
+                  </div>
+                </li>
+                <li className="text-xs2 text-gray-400 lg:text-sm">
+                  {item.variant.title}
+                </li>
+                <li className="text-xs2 text-gray-400 lg:text-sm">
+                  {item.quantity}
+                </li>
+              </ul>
+            </div>
+          ))}
 
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:gap-8">
             <Input
@@ -763,7 +820,10 @@ const CheckoutPage: NextPageWithLayout = () => {
             <li>
               <ul className="flex justify-between pr-2 text-xs sm:text-sm">
                 <li>Subtotal</li>
-                <li>€30</li>
+                <li>
+                  {(cart?.subtotal / 100).toFixed(2)}{' '}
+                  {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                </li>
               </ul>
             </li>
             <li className="!mb-6">
@@ -775,7 +835,11 @@ const CheckoutPage: NextPageWithLayout = () => {
             <li>
               <ul className="flex justify-between text-md lg:text-lg">
                 <li>Total</li>
-                <li>€45</li>
+                <li>
+                  {' '}
+                  {(cart?.subtotal / 100).toFixed(2)}{' '}
+                  {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                </li>
               </ul>
             </li>
             <li className="text-xs text-gray-400 sm:text-sm">

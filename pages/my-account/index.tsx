@@ -33,14 +33,11 @@ const MyAccountPage: NextPageWithLayout = () => {
   const {
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isValid },
     watch,
   } = useForm();
 
   const [selectedCountry, setSelectedCountry] = React.useState<
-    Country | undefined
-  >();
-  const [updatedCountry, setUpdatedCountry] = React.useState<
     Country | undefined
   >();
 
@@ -49,8 +46,6 @@ const MyAccountPage: NextPageWithLayout = () => {
   };
 
   const onSubmit = async (data: any) => {
-    console.log(data);
-
     const response = await account.updateCustomerInfo(
       data.firstName,
       data.lastName,
@@ -62,23 +57,24 @@ const MyAccountPage: NextPageWithLayout = () => {
     }
   };
 
-  const handleAddAddress = async () => {
+  const handleAddAddress = handleSubmit(async (data) => {
+    
     const newAddress = {
       first_name: account.customer?.first_name,
       last_name: account.customer?.last_name,
-      address_1: address,
-      address_2: details,
-      city: city,
+      address_1: data.address,
+      address_2: data.details,
+      city: data.city,
       country_code: selectedCountry?.iso_2,
-      postal_code: postalCode,
+      postal_code: data.postalCode,
       phone: account.customer?.phone,
       company: 'Wyman LLC',
       province: 'Georgia',
     };
-
+  
     const response = await account.addAddress(newAddress);
     account.refetchCustomer();
-  };
+  });
 
   const handleUpdateAddress = async (
     address_id: string,
@@ -96,12 +92,11 @@ const MyAccountPage: NextPageWithLayout = () => {
       updatedAddress.city || existingAddress?.city,
       updatedAddress.postal_code || existingAddress?.postal_code
     );
-
-    console.log(updatedAddress.country_code, existingAddress?.country_code);
-
+    
     setUpdatedAddress1(undefined);
     setUpdatedAddress2('');
     setUpdatedPostalCode('');
+    setUpdatedCity('')
   };
 
   const handleDeleteAddress = async (addressId: any) => {
@@ -285,8 +280,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                             cart?.region?.countries.find(
                               (country: any) =>
                                 country?.iso_2 === address?.country_code
-                                // or
-                                // `${address.country_code}`
                             )?.display_name
                           }
                         </li>
@@ -355,6 +348,8 @@ const MyAccountPage: NextPageWithLayout = () => {
                         </Button>
                       </Dialog.Trigger>
                       <Dialog.Overlay />
+
+                      
                       <Dialog.Content>
                         <Dialog.Title>Change address</Dialog.Title>
 
@@ -384,6 +379,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                             type="number"
                             label="Postal Code"
                             wrapperClassName="flex-1"
+                            defaultValue={address.postal_code}
                             onChange={(e: any) =>
                               setUpdatedPostalCode(e.target.value)
                             }
@@ -392,6 +388,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                             type="text"
                             label="City"
                             wrapperClassName="flex-1"
+                            defaultValue={address.city}
                             onChange={(e) => setUpdatedCity(e.target.value)}
                           />
                         </div>
@@ -443,59 +440,105 @@ const MyAccountPage: NextPageWithLayout = () => {
               </Button>
             </Dialog.Trigger>
             <Dialog.Overlay />
-            <Dialog.Content>
-              <Dialog.Title>Add address</Dialog.Title>
-              <SelectCountry
-                selectedCountry={selectedCountry}
-                onCountryChange={handleCountryChange}
-              />
-              <Input
-                type="text"
-                label="Address"
-                wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
-                defaultValue={address}
-                onChange={(e: any) => setAddress(e.target.value)}
-              />
-              <Input
-                type="text"
-                label="Apartment, suite, etc. (Optional)"
-                wrapperClassName="flex-1 mb-4 lg:mb-8"
-                value={details}
-                onChange={(e: any) => setDetails(e.target.value)}
-              />
-              <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
-                <Input
-                  type="number"
-                  label="Postal Code"
-                  wrapperClassName="flex-1"
-                  value={postalCode}
-                  onChange={(e: any) => setPostalCode(e.target.value)}
+
+            {/* forma ode  */}
+            <form onSubmit={handleAddAddress}>
+              <Dialog.Content>
+                <Dialog.Title>Add address</Dialog.Title>
+                <SelectCountry
+                  selectedCountry={selectedCountry}
+                  onCountryChange={handleCountryChange}
                 />
-                <Input
-                  type="text"
-                  label="City"
-                  wrapperClassName="flex-1"
-                  value={city}
-                  onChange={(e: any) => setCity(e.target.value)}
+                <Controller
+                  name="address"
+                  control={control}
+                  defaultValue={address}
+                  rules={{
+                    required: 'unesi',
+                  }}
+                  render={({ field }: any) => (
+                    <Input
+                      type="text"
+                      label="Address"
+                      wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
+                      errorMessage={errors.address?.message}
+                      {...field}
+                    />
+                  )}
                 />
-              </div>
-              <div className="flex justify-between">
-                <Dialog.Close asChild>
-                  <Button
-                    variant="primary"
-                    aria-label="Save changes"
-                    onPress={handleAddAddress}
-                  >
-                    Add address
-                  </Button>
-                </Dialog.Close>
-                <Dialog.Close asChild>
-                  <Button variant="secondary" aria-label="Cancel">
-                    Cancel
-                  </Button>
-                </Dialog.Close>
-              </div>
-            </Dialog.Content>
+                <Controller
+                  name="details"
+                  control={control}
+                  defaultValue={details}
+                  rules={{
+                    required: 'unesi',
+                  }}
+                  render={({ field }: any) => (
+                    <Input
+                      type="text"
+                      label="Apartment, suite, etc. (Optional)"
+                      wrapperClassName="flex-1 mb-4 lg:mb-8"
+                      errorMessage={errors.details?.message}
+                      {...field}
+                    />
+                  )}
+                />
+                <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
+                  <Controller
+                    name="postalCode"
+                    control={control}
+                    defaultValue={postalCode}
+                    rules={{
+                      required: 'unesi',
+                    }}
+                    render={({ field }: any) => (
+                      <Input
+                        type="number"
+                        label="Postal Code"
+                        wrapperClassName="flex-1"
+                        errorMessage={errors.postalCode?.message}
+                        {...field}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="city"
+                    control={control}
+                    defaultValue={city}
+                    rules={{
+                      required: 'unesi',
+                    }}
+                    render={({ field }: any) => (
+                      <Input
+                        type="text"
+                        label="City"
+                        wrapperClassName="flex-1"
+                        errorMessage={errors.city?.message}
+                        {...field}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <Dialog.Close asChild>
+                    <Button
+                      variant="primary"
+                      aria-label="Save changes"
+                      type="submit"
+                      isDisabled={!isValid}
+                      // onPress={handleAddAddress}
+                    >
+                      Add address
+                    </Button>
+                  </Dialog.Close>
+                  <Dialog.Close asChild>
+                    <Button variant="secondary" aria-label="Cancel">
+                      Cancel
+                    </Button>
+                  </Dialog.Close>
+                </div>
+              </Dialog.Content>
+            </form>
           </Dialog.Root>
         </li>
 

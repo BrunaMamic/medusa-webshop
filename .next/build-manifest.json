@@ -27,6 +27,16 @@
       "static/chunks/main.js",
       "static/chunks/pages/my-account.js"
     ],
+    "/my-account/login": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/my-account/login.js"
+    ],
+    "/my-account/payment-method": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/my-account/payment-method.js"
+    ],
     "/my-account/register": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",

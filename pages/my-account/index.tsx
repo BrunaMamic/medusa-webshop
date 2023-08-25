@@ -17,10 +17,10 @@ import { Country } from '@medusajs/medusa';
 import { useStore } from '@/lib/context/store-context';
 
 const MyAccountPage: NextPageWithLayout = () => {
-  // const [address, setAddress] = useState();
-  // const [details, setDetails] = useState();
-  // const [postalCode, setPostalCode] = useState();
-  // const [city, setCity] = useState();
+  const [address, setAddress] = useState();
+  const [details, setDetails] = useState();
+  const [postalCode, setPostalCode] = useState();
+  const [city, setCity] = useState();
 
   const [updatedAddress1, setUpdatedAddress1] = useState();
   const [updatedAddress2, setUpdatedAddress2] = useState('');

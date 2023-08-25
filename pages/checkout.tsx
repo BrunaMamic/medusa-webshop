@@ -13,6 +13,7 @@ import { SelectCountry } from '@/components/SelectCountry';
 import { Country } from '@medusajs/medusa';
 import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
+import { useCart } from 'medusa-react';
 
 const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
@@ -34,6 +35,54 @@ const CheckoutPage: NextPageWithLayout = () => {
       event.currentTarget.value = value;
     }
   };
+
+  const { updateCart } = useCart();
+  console.log(cart);
+  console.log(account.customer);
+  
+  
+
+  const copyShippingAddressToCart = () => {
+    const shippingAddress = account.customer?.shipping_addresses?.[0];
+    console.log(shippingAddress);
+    
+
+    if (shippingAddress) {
+      const {
+        company,
+        first_name,
+        last_name,
+        address_1,
+        address_2,
+        city,
+        country_code,
+        province,
+        postal_code,
+        phone,
+      } = shippingAddress;
+
+      const updatedShippingAddress = {
+        company,
+        first_name,
+        last_name,
+        address_1,
+        address_2,
+        city,
+        country_code,
+        province,
+        postal_code,
+        phone,
+      };
+      updateCart
+        .mutate(cart.id, {
+          shipping_address: updatedShippingAddress,
+        })
+        .then(({ cart }) => {
+          console.log(cart.shipping_address);
+        });
+    }
+  };
+
 
   return (
     <div className="flex h-full flex-col-reverse lg:flex-row">
@@ -108,7 +157,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                   type="submit"
                   size="lg"
                   className="mt-10.5"
-                  onPress={() => setStep(2)}
+                  onPress={() => {setStep(2);
+                     copyShippingAddressToCart()}}
                 >
                   Next
                 </Button>
@@ -139,7 +189,11 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li>
                   <button
                     className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      setStep(2);
+
+                      
+                    }}
                   >
                     Change
                   </button>
@@ -156,7 +210,6 @@ const CheckoutPage: NextPageWithLayout = () => {
                       throw new Error('Function not implemented.');
                     }}
                   />
-
                   <div className="flex gap-x-4 lg:gap-x-12">
                     <Input
                       type="text"
@@ -236,7 +289,7 @@ const CheckoutPage: NextPageWithLayout = () => {
               </form>
             ) : (
               <ul className="mt-8 [&>ul:last-child]:mb-0 [&>ul]:mb-8">
-                <ul className="flex [&>li:first-child]:break-words">
+                {/* <ul className="flex [&>li:first-child]:break-words">
                   <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Name</li>
 
                   <li className="w-2/3 text-gray-600 md:w-4/5">
@@ -268,7 +321,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   <li className="w-2/3 text-gray-600 md:w-4/5">
                     {account.customer?.shipping_addresses?.[0]?.phone}
                   </li>
-                </ul>
+                </ul> */}
               </ul>
             )}
           </li>
@@ -821,7 +874,7 @@ const CheckoutPage: NextPageWithLayout = () => {
               <ul className="flex justify-between pr-2 text-xs sm:text-sm">
                 <li>Subtotal</li>
                 <li>
-                  {(cart?.subtotal / 100).toFixed(2)}{' '}
+                  {(cart?.subtotal! / 100).toFixed(2)}{' '}
                   {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                 </li>
               </ul>
@@ -837,7 +890,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li>Total</li>
                 <li>
                   {' '}
-                  {(cart?.subtotal / 100).toFixed(2)}{' '}
+                  {(cart?.subtotal! / 100).toFixed(2)}{' '}
                   {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                 </li>
               </ul>

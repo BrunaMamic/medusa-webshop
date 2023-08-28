@@ -6,8 +6,12 @@ import type { NextPageWithLayout } from '@/pages/_app';
 import DefaultLayout from '@/layouts/DefaultLayout';
 import { Button } from '@/components/ui/Button';
 import { Heading } from '@/components/ui/Heading';
+import { useStore } from '@/lib/context/store-context';
 
 const OrderConfirmationPage: NextPageWithLayout = () => {
+  const { cart } = useStore();
+  console.log(cart);
+  
   return (
     <main className="grid-cols-12 px-4 py-10 md:px-24 lg:grid lg:px-0 lg:pb-50 lg:pt-19">
       <span className="col-span-3" />
@@ -36,9 +40,15 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
 
             <ul className="mt-8 text-gray-600 sm:mt-16">
               <li className="mb-2">Shipping adress:</li>
-              <li>Jovana Jerimic</li>
-              <li>Duvanjs 3, 10000 Zagreb, Croatia</li>
-              <li>+385 226 2266</li>
+              {cart?.shipping_address?.address_1},{' '}
+              {cart?.shipping_address?.postal_code}{' '}
+              {cart?.shipping_address?.city},{' '}
+              {
+                cart?.region?.countries.find(
+                  (country: any) =>
+                    country?.iso_2 === cart?.shipping_address?.country_code
+                )?.display_name
+              }
             </ul>
           </div>
 

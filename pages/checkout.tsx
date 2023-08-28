@@ -37,6 +37,25 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [cartShippingMethods, setCartShippingMethods] = useState([]);
 
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [invalidDiscount, setInvalidDiscount] = useState(false);
+
+  const handleApplyDiscount = async () => {
+    try {
+      await medusa.carts.update(cart?.id || '', {
+        discounts: [{ code: discountCode }],
+      });
+
+      setDiscountApplied(true);
+      setInvalidDiscount(false);
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      setDiscountApplied(false);
+      setInvalidDiscount(true);
+    }
+  };
+
   const shippingMethodSelection = () => {
     medusa.shippingOptions
       .listCartOptions(cart?.id as string)
@@ -96,7 +115,6 @@ const CheckoutPage: NextPageWithLayout = () => {
       copyShippingAddressToCart();
       copyBillingAddress();
     }
-
     shippingMethodSelection();
   }, [step, cart]);
 
@@ -133,6 +151,9 @@ const CheckoutPage: NextPageWithLayout = () => {
               postal_code,
               phone,
             } as AddressPayload,
+            // discounts: [{
+            //   code: "test"
+            // }]
           })
           .then(({ cart }) => {
             console.log('billing UPDATE', cart.billing_address);
@@ -260,6 +281,18 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
+  const handlePlaceOrder = async () => {
+    try {
+      const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
+
+      const { type, data } = await medusa.carts.complete(cart?.id || '');
+
+      console.log(type, data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col-reverse lg:flex-row">
       <div className="px-4 pb-10 pt-6 lg:w-1/2 lg:px-12 xl:w-[55%] xl:px-24">
@@ -294,7 +327,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li>
                   <button
                     className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
-                    onClick={() => setStep(1)}
+                    onClick={() => {
+                      setStep(1);
+                    }}
                   >
                     Change
                   </button>
@@ -334,7 +369,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   size="lg"
                   className="mt-10.5"
                   onPress={() => {
-                    setStep(2);
+                    setStep(2), createPaymentSession(cart?.id);
                   }}
                 >
                   Next
@@ -471,7 +506,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   size="lg"
                   className="mt-10"
                   onPress={() => {
-                    setStep(3), shippingMethodSelection();
+                    setStep(3), shippingMethodSelection(), copyBillingAddress();
                   }}
                 >
                   Next
@@ -497,7 +532,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                     className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
                     onClick={() => {
                       {
-                        setStep(3), createPaymentSession(cart?.id);
+                        setStep(3);
                       }
                     }}
                   >
@@ -557,7 +592,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   size="lg"
                   className="mt-10"
                   onPress={() => {
-                    setStep(4), addShippingMethod(), copyBillingAddress();
+                    setStep(4), addShippingMethod();
                   }}
                 >
                   Next
@@ -635,46 +670,11 @@ const CheckoutPage: NextPageWithLayout = () => {
                     >
                       <div className="flex items-center">
                         <span className="relative block h-4 w-4 rounded-full border border-gray-900 bg-gray-900 transition-all before:absolute before:left-[0.3125rem] before:top-[0.3125rem] before:h-1 before:w-1 before:rounded-full before:bg-gray-10 before:content-[''] group-hover:border-primary group-hover:bg-primary" />
-                        <p className="ml-3">Card</p>
+                        <p className="ml-3">Cash</p>
                       </div>
-
-                      <ul className="flex gap-1 lg:gap-4">
-                        <li>
-                          <Image
-                            src={'/images/content/amex.png'}
-                            height={24}
-                            width={34}
-                            alt="Amex"
-                          />
-                        </li>
-                        <li>
-                          <Image
-                            src={'/images/content/dinersclub.png'}
-                            height={24}
-                            width={34}
-                            alt="DinersClub"
-                          />
-                        </li>
-                        <li>
-                          <Image
-                            src={'/images/content/mastercard.png'}
-                            height={24}
-                            width={34}
-                            alt="Mastercard"
-                          />
-                        </li>
-                        <li>
-                          <Image
-                            src={'/images/content/visa.png'}
-                            height={24}
-                            width={34}
-                            alt="Visa"
-                          />
-                        </li>
-                      </ul>
                     </label>
 
-                    <div className="border border-t-0 border-gray-200 p-4 peer-hover:border-primary">
+                    {/* <div className="border border-t-0 border-gray-200 p-4 peer-hover:border-primary">
                       {cardAdded ? (
                         <div>
                           <div className="mb-8 flex items-start justify-between">
@@ -817,10 +817,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                           </Button>
                         </form>
                       )}
-                    </div>
+                    </div> */}
                   </li>
 
-                  <li>
+                  {/* <li>
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -844,9 +844,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                         alt="Google Pay"
                       />
                     </label>
-                  </li>
+                  </li> */}
 
-                  <li>
+                  {/* <li>
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -870,9 +870,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                         alt="Apple Pay"
                       />
                     </label>
-                  </li>
+                  </li> */}
 
-                  <li>
+                  {/* <li>
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -896,14 +896,19 @@ const CheckoutPage: NextPageWithLayout = () => {
                         alt="PayPal"
                       />
                     </label>
-                  </li>
+                  </li> */}
                 </ul>
               </div>
             )}
           </li>
         </ul>
         <Link href="/order-confirmation">
-          <Button size="lg" className="mt-10 w-full" isDisabled={step !== 4}>
+          <Button
+            size="lg"
+            className="mt-10 w-full"
+            isDisabled={step !== 4}
+            onPress={handlePlaceOrder}
+          >
             Place an order
           </Button>
         </Link>
@@ -994,7 +999,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                     <p className="text-xs sm:text-md">{item.title}</p>
                     <ul className="relative items-center gap-2 text-xs sm:mt-0 sm:block sm:self-start">
                       <li className="font-bold text-red-700 sm:text-md">
-                        {(item?.total! / 100).toFixed(2)}{' '}
+                      {(item?.original_total! - item?.raw_discount_total!) / 100}{' '}
                         {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                       </li>
                       {/* <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
@@ -1020,11 +1025,20 @@ const CheckoutPage: NextPageWithLayout = () => {
               label="Discount code"
               wrapperClassName="flex-1"
               className="rounded-sm"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              disabled={discountApplied}
             />
 
-            <Button size="lg" variant="tertiary">
+            <Button size="lg" variant="tertiary" onPress={handleApplyDiscount}>
               Apply
             </Button>
+
+            {invalidDiscount && (
+              <p className="text-red-600">
+                Invalid discount code. Please try again.
+              </p>
+            )}
           </div>
 
           <ul className="w-full [&>li:last-child]:mb-0 [&>li]:mb-2">
@@ -1036,11 +1050,26 @@ const CheckoutPage: NextPageWithLayout = () => {
                   {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                 </li>
               </ul>
+              <ul className="flex justify-between pr-2 text-xs sm:text-sm">
+                {discountApplied && (
+                  <>
+                    <li>Discount</li>
+                    <li>
+                      {(cart?.discount_total! / 100).toFixed(2)}{' '}
+                      {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                    </li>
+                  </>
+                )}
+              </ul>
             </li>
+
             <li className="!mb-6">
               <ul className="flex justify-between pr-2 text-xs sm:text-sm">
                 <li>Shipping</li>
-                <li>€15</li>
+                <li>
+                  {(cart?.shipping_methods?.[0]?.price! / 100).toFixed(2)}{' '}
+                  {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                </li>
               </ul>
             </li>
             <li>
@@ -1048,7 +1077,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li>Total</li>
                 <li>
                   {' '}
-                  {(cart?.subtotal! / 100).toFixed(2)}{' '}
+                  {(cart?.subtotal! - cart?.discount_total! + cart?.shipping_total!) / 100}{' '}
                   {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                 </li>
               </ul>

@@ -22,6 +22,11 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
+    "/cart": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/cart.js"
+    ],
     "/checkout": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -31,6 +36,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/my-account.js"
+    ],
+    "/order-confirmation": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/order-confirmation.js"
+    ],
+    "/product/[handle]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/product/[handle].js"
+    ],
+    "/shop": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/shop.js"
     ]
   },
   "ampFirstPages": []

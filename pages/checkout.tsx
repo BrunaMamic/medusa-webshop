@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import { Tag } from '@/components/ui/Tag';
 import { SelectCountry } from '@/components/SelectCountry';
-import { Country, ShippingMethod } from '@medusajs/medusa';
+import { Country, ShippingMethod, ShippingOption } from '@medusajs/medusa';
 import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
 import { useCart } from 'medusa-react';
@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 
 import { MEDUSA_BACKEND_URL, medusaClient } from '../lib/config';
 import Medusa from '@medusajs/medusa-js';
+import { PricedShippingOption } from '@medusajs/medusa/dist/types/pricing';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
@@ -30,14 +31,16 @@ const CheckoutPage: NextPageWithLayout = () => {
   const account = useAccount();
   const { cart } = useStore();
 
-  const [shippingOptions, setShippingOptions] = useState([]);
+  const [shippingOptions, setShippingOptions] = React.useState<
+    PricedShippingOption[] | undefined
+  >();
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [cartShippingMethods, setCartShippingMethods] = useState([]);
 
   const shippingMethodSelection = () => {
     medusa.shippingOptions
       .listCartOptions(cart?.id as string)
-      .then(({ shipping_options }: any) => {
+      .then(({ shipping_options }) => {
         setShippingOptions(shipping_options);
       })
       .catch((error) => {
@@ -45,12 +48,8 @@ const CheckoutPage: NextPageWithLayout = () => {
       });
   };
 
-  console.log(cart);
-  
-
   const handleMethodSelection = (optionId: any) => {
     setSelectedMethod(optionId);
-    
   };
 
   const addShippingMethod = () => {
@@ -59,9 +58,28 @@ const CheckoutPage: NextPageWithLayout = () => {
         .addShippingMethod(cart?.id as string, {
           option_id: selectedMethod,
         })
-
+        .then(({ cart }: any) => {
+          setCartShippingMethods(cart?.shipping_methods);
+        })
+        .catch((error) => {
+          console.error('Error', error);
+        });
     }
   };
+
+  const createPaymentSession = (cartId: any) => {
+    if (cartId) {
+      medusa.carts
+        .createPaymentSessions(cartId)
+        .then(({ cart }) => {
+          console.log('Initialized', cart.payment_sessions);
+        })
+        .catch((error) => {
+          console.error('Error', error);
+        });
+    }
+  };
+  console.log(cart);
 
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
@@ -76,13 +94,52 @@ const CheckoutPage: NextPageWithLayout = () => {
   useEffect(() => {
     if (step === 2 && cart?.shipping_address === null) {
       copyShippingAddressToCart();
+      copyBillingAddress();
     }
 
     shippingMethodSelection();
-    addShippingMethod()
   }, [step, cart]);
 
   const { updateCart } = useCart();
+
+  const copyBillingAddress = () => {
+    const shippingAddress = account.customer?.shipping_addresses[0];
+    if (shippingAddress) {
+      const {
+        company,
+        first_name,
+        last_name,
+        address_1,
+        address_2,
+        city,
+        country_code,
+        province,
+        postal_code,
+        phone,
+      } = shippingAddress;
+
+      if (cart?.id) {
+        updateCart
+          .mutateAsync({
+            billing_address: {
+              company,
+              first_name,
+              last_name,
+              address_1,
+              address_2,
+              city,
+              country_code,
+              province,
+              postal_code,
+              phone,
+            } as AddressPayload,
+          })
+          .then(({ cart }) => {
+            console.log('billing UPDATE', cart.billing_address);
+          });
+      }
+    }
+  };
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
@@ -116,6 +173,18 @@ const CheckoutPage: NextPageWithLayout = () => {
               postal_code,
               phone,
             } as AddressPayload,
+            // billing_address: {
+            //   company,
+            //   first_name,
+            //   last_name,
+            //   address_1,
+            //   address_2,
+            //   city,
+            //   country_code,
+            //   province,
+            //   postal_code,
+            //   phone,
+            // } as AddressPayload
           })
           .then(({ cart }) => {
             console.log('CART UPDATE', cart.shipping_address);
@@ -135,12 +204,6 @@ const CheckoutPage: NextPageWithLayout = () => {
         console.log('CART UPDATE', cart.shipping_address);
       });
   };
-
-  // const renderShippingMethodOrEmpty = () => {
-
-  //   if (cart?.shipping_methods)
-
-  // }
 
   const renderAddressOrEmpty = () => {
     if (cart?.shipping_address) {
@@ -433,7 +496,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                   <button
                     className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
                     onClick={() => {
-                      setStep(3);
+                      {
+                        setStep(3), createPaymentSession(cart?.id);
+                      }
                     }}
                   >
                     Change
@@ -445,7 +510,7 @@ const CheckoutPage: NextPageWithLayout = () => {
             {step === 3 ? (
               <form>
                 <ul className="[&>li:last-child]:mb-0 [&>li]:mb-2">
-                  {shippingOptions.map((option: any) => (
+                  {shippingOptions?.map((option) => (
                     <li className="relative" key={option.id}>
                       <input
                         type="radio"
@@ -456,6 +521,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                         onChange={() => handleMethodSelection(option.id)}
                         checked={selectedMethod === option.id}
                       />
+                      <p>{option.id}</p>
+                      {selectedMethod}
                       <label
                         htmlFor={option.id}
                         className={`group flex cursor-pointer justify-between rounded-sm border px-4 py-3 leading-none transition-all peer-hover:border-primary lg:py-5 ${
@@ -468,14 +535,16 @@ const CheckoutPage: NextPageWithLayout = () => {
                           <span
                             className={`relative block h-4 w-4 rounded-full border transition-all group-hover:border-primary ${
                               selectedMethod === option.id
-                                ? 'border-red-700'
+                                ? 'border-red-700 '
                                 : 'border-gray-900'
                             }`}
                           />
                           <p className="ml-3">{option.name}</p>
                         </div>
                         <p>
-                          {(option.amount / 100).toFixed(2)}{' '}
+                          {option?.amount
+                            ? (option.amount / 100).toFixed(2)
+                            : 'FREE'}{' '}
                           {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                         </p>
                       </label>
@@ -484,11 +553,11 @@ const CheckoutPage: NextPageWithLayout = () => {
                 </ul>
 
                 <Button
-                  type="submit"
+                  type="button"
                   size="lg"
                   className="mt-10"
                   onPress={() => {
-                    setStep(4), addShippingMethod();
+                    setStep(4), addShippingMethod(), copyBillingAddress();
                   }}
                 >
                   Next
@@ -501,7 +570,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                 </li>
 
                 <li className="w-2/3 text-gray-600 md:w-4/5">
-                  {cart?.shipping_methods?.[0].shipping_option.name}
+                  {/* {cart?.shipping_methods?.[0].shipping_option.name}  */}
+                  {/* oov se prikaze tek nakon refreshas */}
+                  {cartShippingMethods.length > 0 &&
+                    cartShippingMethods?.[0]?.shipping_option?.name}
                 </li>
               </ul>
             )}
@@ -529,9 +601,23 @@ const CheckoutPage: NextPageWithLayout = () => {
                       </li>
                     </ul>
                   </li>
-                  <li>Jovana Jerimic</li>
-                  <li>Duvanjs 3, 10000 Zagreb, Croata</li>
-                  <li>+385 226 2266</li>
+                  <li>
+                    {cart?.billing_address.first_name}{' '}
+                    {cart?.billing_address.last_name}
+                  </li>
+                  <li>
+                    {cart?.billing_address?.address_1},{' '}
+                    {cart?.billing_address?.postal_code}{' '}
+                    {cart?.billing_address?.city},{' '}
+                    {
+                      cart?.region?.countries.find(
+                        (country: any) =>
+                          country?.iso_2 ===
+                          cart?.shipping_address?.country_code
+                      )?.display_name
+                    }
+                  </li>
+                  <li>{cart?.billing_address?.phone}</li>
                 </ul>
 
                 <ul className="[&>li:last-child]:mb-0 [&>li]:mb-2">

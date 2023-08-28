@@ -20,12 +20,8 @@ const CartPage: NextPageWithLayout = () => {
   
   const { cart } = MedusaCart();
   const store = useStore();
-  console.log(store);
-  console.log(cart);
-  
-  
 
-  const updateItem = async (lineId:string, quantity:number) => {
+    const updateItem = async (lineId:string, quantity:number) => {
     await store.updateItem({
       lineId,
       quantity,

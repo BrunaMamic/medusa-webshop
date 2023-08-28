@@ -10,10 +10,17 @@ import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import { Tag } from '@/components/ui/Tag';
 import { SelectCountry } from '@/components/SelectCountry';
-import { Country } from '@medusajs/medusa';
+import { Country, ShippingMethod } from '@medusajs/medusa';
 import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
 import { useCart } from 'medusa-react';
+import { AddressPayload } from '@medusajs/types';
+import { useEffect, useState } from 'react';
+
+import { MEDUSA_BACKEND_URL, medusaClient } from '../lib/config';
+import Medusa from '@medusajs/medusa-js';
+
+const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
 const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
@@ -22,9 +29,39 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const account = useAccount();
   const { cart } = useStore();
-  console.log(cart);
 
-  console.log(account.customer?.shipping_addresses?.[0]);
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [cartShippingMethods, setCartShippingMethods] = useState([]);
+
+  const shippingMethodSelection = () => {
+    medusa.shippingOptions
+      .listCartOptions(cart?.id as string)
+      .then(({ shipping_options }: any) => {
+        setShippingOptions(shipping_options);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  };
+
+  console.log(cart);
+  
+
+  const handleMethodSelection = (optionId: any) => {
+    setSelectedMethod(optionId);
+    
+  };
+
+  const addShippingMethod = () => {
+    if (selectedMethod) {
+      medusa.carts
+        .addShippingMethod(cart?.id as string, {
+          option_id: selectedMethod,
+        })
+
+    }
+  };
 
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
@@ -36,17 +73,20 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
+  useEffect(() => {
+    if (step === 2 && cart?.shipping_address === null) {
+      copyShippingAddressToCart();
+    }
+
+    shippingMethodSelection();
+    addShippingMethod()
+  }, [step, cart]);
+
   const { updateCart } = useCart();
-  console.log(cart);
-  console.log(account.customer);
-  
-  
 
   const copyShippingAddressToCart = () => {
-    const shippingAddress = account.customer?.shipping_addresses?.[0];
-    console.log(shippingAddress);
-    
-
+    // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
+    const shippingAddress = account.customer?.shipping_addresses[0];
     if (shippingAddress) {
       const {
         company,
@@ -61,28 +101,101 @@ const CheckoutPage: NextPageWithLayout = () => {
         phone,
       } = shippingAddress;
 
-      const updatedShippingAddress = {
-        company,
-        first_name,
-        last_name,
-        address_1,
-        address_2,
-        city,
-        country_code,
-        province,
-        postal_code,
-        phone,
-      };
-      updateCart
-        .mutate(cart.id, {
-          shipping_address: updatedShippingAddress,
-        })
-        .then(({ cart }) => {
-          console.log(cart.shipping_address);
-        });
+      if (cart?.id) {
+        updateCart
+          .mutateAsync({
+            shipping_address: {
+              company,
+              first_name,
+              last_name,
+              address_1,
+              address_2,
+              city,
+              country_code,
+              province,
+              postal_code,
+              phone,
+            } as AddressPayload,
+          })
+          .then(({ cart }) => {
+            console.log('CART UPDATE', cart.shipping_address);
+          });
+      }
     }
   };
 
+  const updateCountry = async (payload: any) => {
+    await updateCart
+      .mutateAsync({
+        shipping_address: {
+          country_code: payload,
+        } as AddressPayload,
+      })
+      .then(({ cart }) => {
+        console.log('CART UPDATE', cart.shipping_address);
+      });
+  };
+
+  // const renderShippingMethodOrEmpty = () => {
+
+  //   if (cart?.shipping_methods)
+
+  // }
+
+  const renderAddressOrEmpty = () => {
+    if (cart?.shipping_address) {
+      return (
+        <ul className="mt-8 [&>ul:last-child]:mb-0 [&>ul]:mb-8">
+          <ul className="flex [&>li:first-child]:break-words">
+            <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Name</li>
+
+            <li className="w-2/3 text-gray-600 md:w-4/5">
+              {cart?.shipping_address?.first_name}{' '}
+              {cart?.shipping_address?.last_name}
+            </li>
+          </ul>
+
+          <ul className="flex [&>li:first-child]:break-words">
+            <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Ship to</li>
+
+            <li className="w-2/3 text-gray-600 md:w-4/5">
+              {cart?.shipping_address?.address_1},{' '}
+              {cart?.shipping_address?.postal_code}{' '}
+              {cart?.shipping_address?.city},{' '}
+              {
+                cart?.region?.countries.find(
+                  (country: any) =>
+                    country?.iso_2 === cart?.shipping_address?.country_code
+                )?.display_name
+              }
+            </li>
+          </ul>
+
+          <ul className="flex [&>li:first-child]:break-words">
+            <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Phone</li>
+
+            <li className="w-2/3 text-gray-600 md:w-4/5">
+              {cart?.shipping_address?.phone}
+            </li>
+          </ul>
+        </ul>
+      );
+    } else {
+      return null;
+    }
+  };
+
+  const updateField = async (value: string, key: string) => {
+    try {
+      await updateCart.mutateAsync({
+        shipping_address: {
+          [key]: value,
+        },
+      });
+    } catch (e) {
+      console.log('ERROR', e);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col-reverse lg:flex-row">
@@ -157,8 +270,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                   type="submit"
                   size="lg"
                   className="mt-10.5"
-                  onPress={() => {setStep(2);
-                     copyShippingAddressToCart()}}
+                  onPress={() => {
+                    setStep(2);
+                  }}
                 >
                   Next
                 </Button>
@@ -191,8 +305,6 @@ const CheckoutPage: NextPageWithLayout = () => {
                     className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
                     onClick={() => {
                       setStep(2);
-
-                      
                     }}
                   >
                     Change
@@ -205,9 +317,11 @@ const CheckoutPage: NextPageWithLayout = () => {
               <form>
                 <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
                   <SelectCountry
-                    selectedCountry={undefined}
-                    onCountryChange={function (country: Country): void {
-                      throw new Error('Function not implemented.');
+                    selectedCountry={cart?.region.countries.find(
+                      (x) => x.iso_2 === cart?.shipping_address?.country_code
+                    )}
+                    onCountryChange={(country: Country): void => {
+                      updateCountry(country.iso_2);
                     }}
                   />
                   <div className="flex gap-x-4 lg:gap-x-12">
@@ -215,35 +329,43 @@ const CheckoutPage: NextPageWithLayout = () => {
                       type="text"
                       label="First name"
                       wrapperClassName="w-full"
-                      name="firstName"
-                      defaultValue={account.customer?.first_name}
+                      name="first_name"
+                      onChange={(event) =>
+                        updateField(event.target.value, 'first_name')
+                      }
+                      defaultValue={cart?.shipping_address?.first_name || ''}
                     />
 
                     <Input
                       type="text"
                       label="Last name"
                       wrapperClassName="w-full"
-                      name="lastName"
-                      defaultValue={account.customer?.last_name}
+                      name="last_name"
+                      onChange={(event) =>
+                        updateField(event.target.value, 'last_name')
+                      }
+                      defaultValue={cart?.shipping_address?.last_name || ''}
                     />
                   </div>
 
                   <Input
                     type="text"
                     label="Address"
-                    name="address"
-                    defaultValue={
-                      account.customer?.shipping_addresses?.[0]?.address_1!
+                    name="address_1"
+                    onChange={(event) =>
+                      updateField(event.target.value, 'address_1')
                     }
+                    defaultValue={cart?.shipping_address?.address_1 || ''}
                   />
 
                   <Input
                     type="text"
                     label="Apartment, suite, etc. (Optional)"
-                    name="apartment"
-                    defaultValue={
-                      account.customer?.shipping_addresses?.[0]?.address_2!
+                    name="address_2"
+                    onChange={(event) =>
+                      updateField(event.target.value, 'address_2')
                     }
+                    defaultValue={cart?.shipping_address?.address_2 || ''}
                   />
 
                   <div className="flex gap-x-4 lg:gap-x-12">
@@ -251,10 +373,11 @@ const CheckoutPage: NextPageWithLayout = () => {
                       type="number"
                       label="Postal Code"
                       wrapperClassName="w-full"
-                      name="postalCode"
-                      defaultValue={
-                        account.customer?.shipping_addresses?.[0]?.postal_code!
+                      name="postal_code"
+                      onChange={(event) =>
+                        updateField(event.target.value, 'postal_code')
                       }
+                      defaultValue={cart?.shipping_address?.postal_code || ''}
                     />
 
                     <Input
@@ -262,9 +385,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                       label="City"
                       wrapperClassName="w-full"
                       name="city"
-                      defaultValue={
-                        account.customer?.shipping_addresses?.[0]?.city!
+                      onChange={(event) =>
+                        updateField(event.target.value, 'city')
                       }
+                      defaultValue={cart?.shipping_address?.city || ''}
                     />
                   </div>
 
@@ -272,9 +396,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                     type="phone"
                     label="Phone"
                     name="phone"
-                    defaultValue={
-                      account.customer?.shipping_addresses?.[0]?.phone!
+                    onChange={(event) =>
+                      updateField(event.target.value, 'phone')
                     }
+                    defaultValue={cart?.shipping_address?.phone || ''}
                   />
                 </fieldset>
 
@@ -282,47 +407,15 @@ const CheckoutPage: NextPageWithLayout = () => {
                   type="submit"
                   size="lg"
                   className="mt-10"
-                  onPress={() => setStep(3)}
+                  onPress={() => {
+                    setStep(3), shippingMethodSelection();
+                  }}
                 >
                   Next
                 </Button>
               </form>
             ) : (
-              <ul className="mt-8 [&>ul:last-child]:mb-0 [&>ul]:mb-8">
-                {/* <ul className="flex [&>li:first-child]:break-words">
-                  <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Name</li>
-
-                  <li className="w-2/3 text-gray-600 md:w-4/5">
-                    {account.customer?.first_name} {account.customer?.last_name}
-                  </li>
-                </ul>
-
-                <ul className="flex [&>li:first-child]:break-words">
-                  <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Ship to</li>
-
-                  <li className="w-2/3 text-gray-600 md:w-4/5">
-                    {account.customer?.shipping_addresses?.[0]?.address_1},{' '}
-                    {account.customer?.shipping_addresses?.[0]?.postal_code}
-                    {account.customer?.shipping_addresses?.[0]?.city},
-                    {
-                      cart?.region?.countries.find(
-                        (country: any) =>
-                          country?.iso_2 ===
-                          account.customer?.shipping_addresses?.[0]
-                            ?.country_code
-                      )?.display_name
-                    }
-                  </li>
-                </ul>
-
-                <ul className="flex [&>li:first-child]:break-words">
-                  <li className="w-1/3 pr-6 text-gray-400 md:w-1/5">Phone</li>
-
-                  <li className="w-2/3 text-gray-600 md:w-4/5">
-                    {account.customer?.shipping_addresses?.[0]?.phone}
-                  </li>
-                </ul> */}
-              </ul>
+              renderAddressOrEmpty()
             )}
           </li>
 
@@ -339,7 +432,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li>
                   <button
                     className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
-                    onClick={() => setStep(3)}
+                    onClick={() => {
+                      setStep(3);
+                    }}
                   >
                     Change
                   </button>
@@ -350,74 +445,51 @@ const CheckoutPage: NextPageWithLayout = () => {
             {step === 3 ? (
               <form>
                 <ul className="[&>li:last-child]:mb-0 [&>li]:mb-2">
-                  <li className="relative">
-                    <input
-                      type="radio"
-                      name="shippingMethod"
-                      id="deliveryStandard"
-                      className="peer hidden"
-                      value="Stand delivery 3 - 5 days"
-                    />
-                    <label
-                      htmlFor="deliveryStandard"
-                      className="group flex cursor-pointer justify-between rounded-sm border px-4 py-3 leading-none transition-all peer-hover:border-primary lg:py-5"
-                    >
-                      <div className="flex items-center">
-                        <span className="relative block h-4 w-4 rounded-full border border-gray-900 transition-all group-hover:border-primary" />
-
-                        <p className="ml-3">Stand delivery 3 - 5 days</p>
-                      </div>
-                      <p>€5</p>
-                    </label>
-                  </li>
-
-                  <li className="relative">
-                    <input
-                      type="radio"
-                      name="shippingMethod"
-                      id="deliveryStandard2"
-                      className="peer hidden"
-                      value="Stand delivery 3 - 5 days"
-                    />
-                    <label
-                      htmlFor="deliveryStandard2"
-                      className="group flex cursor-pointer justify-between rounded-sm border px-4 py-3 leading-none transition-all peer-hover:border-primary lg:py-5"
-                    >
-                      <div className="flex items-center">
-                        <span className="relative block h-4 w-4 rounded-full border border-gray-900 bg-gray-900 transition-all before:absolute before:left-[0.3125rem] before:top-[0.3125rem] before:h-1 before:w-1 before:rounded-full before:bg-gray-10 before:content-[''] group-hover:border-primary group-hover:bg-primary" />
-
-                        <p className="ml-3">Stand delivery 3 - 5 days</p>
-                      </div>
-                      <p>€5</p>
-                    </label>
-                  </li>
-
-                  <li>
-                    <input
-                      type="radio"
-                      name="shippingMethod"
-                      id="deliveryFast"
-                      className="peer hidden"
-                      value="Fast delivery 1 - 2 days"
-                    />
-                    <label
-                      htmlFor="deliveryFast"
-                      className="group flex cursor-pointer justify-between rounded-sm border border-red-700 px-4 py-3 leading-none transition-all hover:border-red-900 lg:py-5"
-                    >
-                      <div className="flex items-center">
-                        <span className="relative block h-4 w-4 rounded-full border border-red-700 transition-all group-hover:border-red-900" />
-                        <p className="ml-3">Fast delivery 1 - 2 days</p>
-                      </div>
-                      <p>€10</p>
-                    </label>
-                  </li>
+                  {shippingOptions.map((option: any) => (
+                    <li className="relative" key={option.id}>
+                      <input
+                        type="radio"
+                        name="shippingMethod"
+                        id={option.id}
+                        className="peer hidden"
+                        value={option.name}
+                        onChange={() => handleMethodSelection(option.id)}
+                        checked={selectedMethod === option.id}
+                      />
+                      <label
+                        htmlFor={option.id}
+                        className={`group flex cursor-pointer justify-between rounded-sm border px-4 py-3 leading-none transition-all peer-hover:border-primary lg:py-5 ${
+                          selectedMethod === option.id
+                            ? 'border-red-700 hover:border-red-900'
+                            : ''
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <span
+                            className={`relative block h-4 w-4 rounded-full border transition-all group-hover:border-primary ${
+                              selectedMethod === option.id
+                                ? 'border-red-700'
+                                : 'border-gray-900'
+                            }`}
+                          />
+                          <p className="ml-3">{option.name}</p>
+                        </div>
+                        <p>
+                          {(option.amount / 100).toFixed(2)}{' '}
+                          {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                        </p>
+                      </label>
+                    </li>
+                  ))}
                 </ul>
 
                 <Button
                   type="submit"
                   size="lg"
                   className="mt-10"
-                  onPress={() => setStep(4)}
+                  onPress={() => {
+                    setStep(4), addShippingMethod();
+                  }}
                 >
                   Next
                 </Button>
@@ -429,7 +501,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                 </li>
 
                 <li className="w-2/3 text-gray-600 md:w-4/5">
-                  Stand delivery 3 — 5 days
+                  {cart?.shipping_methods?.[0].shipping_option.name}
                 </li>
               </ul>
             )}

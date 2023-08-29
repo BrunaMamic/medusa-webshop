@@ -71,6 +71,7 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const handleMethodSelection = (optionId: any) => {
     setSelectedMethod(optionId);
+    console.log(selectedMethod);
   };
 
   const addShippingMethod = async () => {
@@ -112,8 +113,6 @@ const CheckoutPage: NextPageWithLayout = () => {
       event.currentTarget.value = value;
     }
   };
-
-  console.log(cart);
 
   useEffect(() => {
     if (step === 2 && cart?.shipping_address === null) {
@@ -607,10 +606,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                 </li>
 
                 <li className="w-2/3 text-gray-600 md:w-4/5">
-                  {/* {cart?.shipping_methods?.[0].shipping_option.name}  */}
-                  {/* oov se prikaze tek nakon refreshas */}
                   {(cart?.shipping_methods || []).length > 0 &&
                     cart?.shipping_methods?.[0]?.shipping_option?.name}
+                  {selectedMethod}
                 </li>
               </ul>
             )}
@@ -689,7 +687,6 @@ const CheckoutPage: NextPageWithLayout = () => {
         >
           Place an order
         </Button>
-
       </div>
 
       <ul className="top-0 bg-gray-50 lg:sticky lg:h-screen lg:w-1/2 xl:w-[45%]">
@@ -724,7 +721,12 @@ const CheckoutPage: NextPageWithLayout = () => {
           className="flex cursor-pointer justify-between px-4 pb-7 pt-6 lg:hidden"
           onClick={() => setCheckoutVisible(!checkoutVisible)}
         >
-          Order summary <span className="ml-auto mr-4 block">€45</span>{' '}
+          Order summary{' '}
+          <span className="ml-auto mr-4 block">
+            {(cart?.subtotal! - cart?.discount_total! + cart?.shipping_total!) /
+              100}{' '}
+            {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+          </span>{' '}
           <Icon
             name="chevron-down"
             className={classNames('transition-all', {

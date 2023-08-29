@@ -8,11 +8,20 @@ import { Tag } from '@/components/ui/Tag';
 import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import * as Dialog from '@/components/ui/Dialog';
+import { useRouter } from 'next/router';
+import { useOrder } from 'medusa-react';
+import { useState } from 'react';
 
 const OrderReturnModal: React.FC = () => {
   const [returnModalStep, setReturnModalStep] = React.useState<
     false | 'form' | 'success'
   >(false);
+  
+  const router = useRouter();
+  const orderId = router.query.orderId;
+  const { order, isLoading } = useOrder(
+    typeof orderId === 'string' ? orderId : ''
+  );
 
   return (
     <>
@@ -248,12 +257,23 @@ const OrderReturnModal: React.FC = () => {
 };
 
 const MyAccountOrderSinglePage: NextPageWithLayout = () => {
+  const router = useRouter();
+  const orderId = router.query.orderId;
+  const { order, isLoading } = useOrder(
+    typeof orderId === 'string' ? orderId : ''
+  );
+  console.log(order);
+  const [orders, setOrders] = useState(order);
+  console.log(orders);
+  
+  
+
   return (
     <div>
       <Heading className="mb-5 text-primary" size="xl">
         Order:
         <span className="ml-3 text-lg font-light not-italic text-black lg:ml-6">
-          00000000001
+          {order?.display_id}
         </span>
       </Heading>
 
@@ -291,8 +311,9 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
         <span className="ml-4 mr-auto block text-gray-400">Order date</span>
 
-        <span className="block">29 June, 2023</span>
-      </div>
+        <span className="block">{new Date(order.created_at).toLocaleDateString()}</span>
+        
+      </div >
 
       <div className="mb-4 flex flex-wrap gap-4">
         <div className="flex flex-1 flex-col items-start justify-between rounded-sm border border-gray-200 p-4 sm:flex-row">
@@ -306,11 +327,12 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
           </div>
 
           <ul className="sm:text-end [&>li:last-child]:mb-0 [&>li]:mb-1">
-            <li>Jovana Jerimic</li>
-            <li>Duvanjs 3</li>
-            <li>10000 Zagreb</li>
-            <li>Croata</li>
-            <li>+385 226 2266</li>
+            <li>{order?.shipping_address.first_name}{' '}{order?.shipping_address.last_name}</li>
+            <li>{order?.shipping_address.address_1}</li>
+            <li>{order?.shipping_address.postal_code} {' '}{order?.shipping_address.city}</li>
+            <li>{order?.shipping_address.country_code}</li> 
+            {/* opet ovo isto */}
+            <li>{order?.shipping_address.phone}</li>
           </ul>
         </div>
 

@@ -30,7 +30,7 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
         setOrderData(order);
       })
       .catch((error) => {
-        console.error('Error fetching order data:', error);
+        console.error('Error', error);
       });
   }, [id]);
   
@@ -58,7 +58,7 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
         <div className="mb-16 flex flex-col justify-between gap-20 sm:flex-row">
           <div>
             <p className="mb-2">Your order number is:</p>
-            <p className="font-bold">{orderData?.id}</p>
+            <p className="font-bold">{orderData?.display_id}</p>
 
             <ul className="mt-8 text-gray-600 sm:mt-16">
               <li className="mb-2">Shipping adress:</li>

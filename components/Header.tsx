@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import classNames from '@/utils/classNames';
 import { Icon, BadgeIcon } from '@/components/ui/Icon';
 import { useCart } from 'medusa-react';
+import { RegionPicker } from './ui/RegionPicker';
+import { useState } from 'react';
 
 export interface HeaderProps {
   isAbsolute?: boolean;
@@ -20,7 +22,21 @@ export const Header: React.FC<HeaderProps> = ({
   const [isOffcanvasOpen, setIsOffcanvasOpen] = React.useState(false);
   const {cart} = useCart()
 
-  console.log(cart?.items.length!)
+
+  // const [selectedRegion, setSelectedRegion] = useState({
+  //   id: cart?.country?.metadata?.id ?? 'defaultId',
+  // });
+
+  // const handleRegionSelection = async (region: { id: string; currency: string }) => {
+  //   setSelectedRegion(region);
+  //   await updateCart.mutateAsync({
+  //     country: {
+  //       ...cart.country,
+  //       metadata: { id: region.id},
+  //     },
+  //   });
+  // };
+  
 
   return (
     <>
@@ -100,21 +116,14 @@ export const Header: React.FC<HeaderProps> = ({
             <Icon name="search" />
           </li>
           <li>
-            <ul className="flex uppercase">
-              <li
-                className={classNames(
-                  'border-r-[0.0938rem] border-gray-900 pr-[0.5625rem]',
-                  { 'border-white': colorScheme === 'inverted' }
-                )}
-              >
-                HR
-              </li>
-              <li className="pl-2">EUR</li>
-            </ul>
+          <RegionPicker
+              colorScheme={colorScheme}
+              defaultValue={{ id: 'hr', currency: 'eur' }}
+            />
           </li>
           <li>
             <Link href="/my-account/login">
-              <BadgeIcon icon="user" value={10} />
+              <BadgeIcon icon="user" value={cart?.items.length!} />
             </Link>
           </li>
           <li>

@@ -2,7 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/cart": "pages/cart.js",
-  "/checkout": "pages/checkout.js",
-  "/order-confirmation": "pages/order-confirmation.js"
+  "/my-account": "pages/my-account.js",
+  "/my-account/orders": "pages/my-account/orders.js",
+  "/my-account/orders/[orderId]": "pages/my-account/orders/[orderId].js"
 }

@@ -47,13 +47,14 @@ const baseButtonClasses = [
   'rounded-sm',
   '!leading-none',
   'disabled:pointer-events-none',
+  'focus-visible:outline-0',
 ];
 
 const getButtonVariantClasses = (
   variant: ButtonProps['variant'] = 'primary'
 ) => {
   if (variant === 'secondary') {
-    return 'border border-primary text-primary hover:border-primary-900 hover:text-primary-900 disabled:border-primary-100';
+    return 'border border-primary text-primary hover:border-primary-900 hover:text-primary-900 disabled:border-primary-100 disabled:text-primary-100';
   }
 
   if (variant === 'tertiary') {

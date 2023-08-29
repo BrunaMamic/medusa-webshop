@@ -7,8 +7,17 @@ import AccountLayout from '@/layouts/AccountLayout';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { Heading } from '@/components/ui/Heading';
+import router, { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import { Order } from '@medusajs/medusa';
+
+import { MEDUSA_BACKEND_URL, medusaClient } from '../../../lib/config';
+import Medusa from '@medusajs/medusa-js';
+
+const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
 const MyAccountOrdersPage: NextPageWithLayout = () => {
+
   return (
     <div>
       <Heading className="mb-8 text-primary lg:mb-15">My orders</Heading>

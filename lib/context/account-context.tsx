@@ -169,14 +169,16 @@ export const AccountProvider = ({ children }: AccountProviderProps) => {
   });
 
   const handleLogout = () => {
-    useDeleteSession.mutate(undefined, {
-      onSuccess: () => {
-        remove();
-        loginView[1](LOGIN_VIEW.SIGN_IN);
-        router.push('/my-account/login');
-      },
-    });
-  };
+  useDeleteSession.mutate(undefined, {
+    onSuccess: () => {
+      localStorage.removeItem('medusa_cart_id');
+      
+      remove();
+      loginView[1](LOGIN_VIEW.SIGN_IN);
+      router.push('/');
+    },
+  });
+};
 
   return (
     <AccountContext.Provider

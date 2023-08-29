@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { MEDUSA_BACKEND_URL, medusaClient } from '../lib/config';
 import Medusa from '@medusajs/medusa-js';
 import { PricedShippingOption } from '@medusajs/medusa/dist/types/pricing';
+import { useRouter } from 'next/router';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
@@ -27,6 +28,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
   const [cardAdded, setCardAdded] = React.useState(false);
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
+  const router = useRouter();
 
   const account = useAccount();
   const { cart } = useStore();
@@ -34,8 +36,8 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [shippingOptions, setShippingOptions] = React.useState<
     PricedShippingOption[] | undefined
   >();
-  const [selectedMethod, setSelectedMethod] = useState(null);
-  const [cartShippingMethods, setCartShippingMethods] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState<any>(null);
+  const [cartShippingMethods, setCartShippingMethods] = useState<any>([]);
 
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
@@ -71,13 +73,15 @@ const CheckoutPage: NextPageWithLayout = () => {
     setSelectedMethod(optionId);
   };
 
-  const addShippingMethod = () => {
+  const addShippingMethod = async () => {
     if (selectedMethod) {
-      medusa.carts
+      console.log('SELECted Method', selectedMethod);
+      await medusa.carts
         .addShippingMethod(cart?.id as string, {
           option_id: selectedMethod,
         })
         .then(({ cart }: any) => {
+          console.log('SHIP MET THEN', cart.shipping_methods);
           setCartShippingMethods(cart?.shipping_methods);
         })
         .catch((error) => {
@@ -98,7 +102,6 @@ const CheckoutPage: NextPageWithLayout = () => {
         });
     }
   };
-  console.log(cart);
 
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
@@ -110,10 +113,16 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
+  console.log(cart);
+
   useEffect(() => {
     if (step === 2 && cart?.shipping_address === null) {
       copyShippingAddressToCart();
       copyBillingAddress();
+    }
+
+    if (step === 3 && (cart?.shipping_methods || [])?.length > 0) {
+      setSelectedMethod(cart?.shipping_methods[0].shipping_option?.id || '');
     }
     shippingMethodSelection();
   }, [step, cart]);
@@ -151,9 +160,6 @@ const CheckoutPage: NextPageWithLayout = () => {
               postal_code,
               phone,
             } as AddressPayload,
-            // discounts: [{
-            //   code: "test"
-            // }]
           })
           .then(({ cart }) => {
             console.log('billing UPDATE', cart.billing_address);
@@ -194,18 +200,6 @@ const CheckoutPage: NextPageWithLayout = () => {
               postal_code,
               phone,
             } as AddressPayload,
-            // billing_address: {
-            //   company,
-            //   first_name,
-            //   last_name,
-            //   address_1,
-            //   address_2,
-            //   city,
-            //   country_code,
-            //   province,
-            //   postal_code,
-            //   phone,
-            // } as AddressPayload
           })
           .then(({ cart }) => {
             console.log('CART UPDATE', cart.shipping_address);
@@ -288,6 +282,13 @@ const CheckoutPage: NextPageWithLayout = () => {
       const { type, data } = await medusa.carts.complete(cart?.id || '');
 
       console.log(type, data);
+      console.log('added');
+      console.log(data);
+
+      router.push({
+        pathname: '/order-confirmation',
+        query: { id: data.id },
+      });
     } catch (error) {
       console.error('Error:', error);
     }
@@ -343,9 +344,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                   type="email"
                   label="Email"
                   name="email"
-                  // errorMessage="You forgot your email"
                   wrapperClassName="[&>span]:static"
-                  defaultValue={account.customer?.email}
+                  defaultValue={cart?.email}
                 />
 
                 <div className="mt-3.5 flex items-start gap-1">
@@ -369,7 +369,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                   size="lg"
                   className="mt-10.5"
                   onPress={() => {
-                    setStep(2), createPaymentSession(cart?.id);
+                    setStep(2);
+                    createPaymentSession(cart?.id);
                   }}
                 >
                   Next
@@ -506,7 +507,9 @@ const CheckoutPage: NextPageWithLayout = () => {
                   size="lg"
                   className="mt-10"
                   onPress={() => {
-                    setStep(3), shippingMethodSelection(), copyBillingAddress();
+                    setStep(3);
+                    shippingMethodSelection();
+                    copyBillingAddress();
                   }}
                 >
                   Next
@@ -556,8 +559,6 @@ const CheckoutPage: NextPageWithLayout = () => {
                         onChange={() => handleMethodSelection(option.id)}
                         checked={selectedMethod === option.id}
                       />
-                      <p>{option.id}</p>
-                      {selectedMethod}
                       <label
                         htmlFor={option.id}
                         className={`group flex cursor-pointer justify-between rounded-sm border px-4 py-3 leading-none transition-all peer-hover:border-primary lg:py-5 ${
@@ -592,7 +593,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                   size="lg"
                   className="mt-10"
                   onPress={() => {
-                    setStep(4), addShippingMethod();
+                    setStep(4);
+                    addShippingMethod();
                   }}
                 >
                   Next
@@ -607,8 +609,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li className="w-2/3 text-gray-600 md:w-4/5">
                   {/* {cart?.shipping_methods?.[0].shipping_option.name}  */}
                   {/* oov se prikaze tek nakon refreshas */}
-                  {cartShippingMethods.length > 0 &&
-                    cartShippingMethods?.[0]?.shipping_option?.name}
+                  {(cart?.shipping_methods || []).length > 0 &&
+                    cart?.shipping_methods?.[0]?.shipping_option?.name}
                 </li>
               </ul>
             )}
@@ -673,245 +675,21 @@ const CheckoutPage: NextPageWithLayout = () => {
                         <p className="ml-3">Cash</p>
                       </div>
                     </label>
-
-                    {/* <div className="border border-t-0 border-gray-200 p-4 peer-hover:border-primary">
-                      {cardAdded ? (
-                        <div>
-                          <div className="mb-8 flex items-start justify-between">
-                            <ul className="w-full">
-                              <li className="flex items-start border-b border-gray-200 pb-7 pt-8 first:pt-0 last:border-0 last:pb-0">
-                                <input
-                                  type="radio"
-                                  name="credit-card"
-                                  id="credit-card-1"
-                                  className="peer hidden"
-                                />
-                                <label
-                                  htmlFor="credit-card-1"
-                                  className="group peer flex flex-1 cursor-pointer items-start"
-                                >
-                                  <span className="relative mr-3 mt-1 block h-4 w-4 rounded-full border border-gray-900 bg-gray-900 transition-all before:absolute before:left-[0.3125rem] before:top-[0.3125rem] before:h-1 before:w-1 before:rounded-full before:bg-gray-10 before:content-[''] group-hover:border-primary group-hover:bg-primary" />
-
-                                  <Image
-                                    src={'/images/content/visa.png'}
-                                    height={24}
-                                    width={34}
-                                    alt="Visa"
-                                  />
-
-                                  <ul className="gray-600 ml-4 flex-1 lg:ml-14">
-                                    <li>Jovana Jerimic</li>
-                                    <li>**** **** **** 1111</li>
-                                    <li>Exp: 05/26</li>
-                                  </ul>
-
-                                  <button
-                                    className="relative text-xs transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
-                                    onClick={() => setCardAdded(false)}
-                                  >
-                                    Change
-                                  </button>
-                                </label>
-                              </li>
-                              <li className="flex items-start border-b border-gray-200 pb-7 pt-8 first:pt-0 last:border-0 last:pb-0">
-                                <input
-                                  type="radio"
-                                  name="credit-card"
-                                  id="credit-card-2"
-                                  className="peer hidden"
-                                />
-                                <label
-                                  htmlFor="credit-card-2"
-                                  className="group peer flex flex-1 cursor-pointer items-start"
-                                >
-                                  <span className="relative mr-3 mt-1 block h-4 w-4 rounded-full border border-gray-900 transition-all group-hover:border-primary" />
-
-                                  <Image
-                                    src={'/images/content/dinersClub.png'}
-                                    height={24}
-                                    width={34}
-                                    alt="DinersClub"
-                                  />
-
-                                  <ul className="gray-600 ml-4 flex-1 lg:ml-14">
-                                    <li>Jovana Jerimic</li>
-                                    <li>**** **** **** 1111</li>
-                                    <li>Exp: 05/26</li>
-                                  </ul>
-
-                                  <button
-                                    className="relative text-xs transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
-                                    onClick={() => setCardAdded(false)}
-                                  >
-                                    Change
-                                  </button>
-                                </label>
-                              </li>
-                            </ul>
-                          </div>
-
-                          <Button
-                            variant="tertiary"
-                            size="lg"
-                            className="!px-9"
-                          >
-                            Add another card
-                          </Button>
-                        </div>
-                      ) : (
-                        <form>
-                          <Input
-                            type="text"
-                            label="Name on card"
-                            name="nameOnCard"
-                            className="mb-4 lg:mb-8"
-                          />
-                          <Input
-                            type="number"
-                            label="Card number"
-                            name="cardNumber"
-                            className="mb-4 lg:mb-8"
-                          />
-
-                          <div className="mb-4 flex gap-x-4">
-                            <Input
-                              type="text"
-                              label="MM/YY"
-                              wrapperClassName="w-full"
-                              name="expDate"
-                              onChange={onExpDateChange}
-                              maxLength={5}
-                            />
-
-                            <Input
-                              type="number"
-                              label="CVC"
-                              wrapperClassName="w-full"
-                              name="CVC"
-                              // maxLength={3}
-                            />
-                          </div>
-
-                          <div className="mb-8 flex items-start gap-1">
-                            <input
-                              type="checkbox"
-                              name="saveCard"
-                              id="saveCard"
-                              className="relative h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                            />
-                            <label
-                              htmlFor="saveCard"
-                              className="cursor-pointer text-xs text-gray-400"
-                            >
-                              Save card details for next time
-                            </label>
-                          </div>
-
-                          <Button
-                            type="submit"
-                            onPress={() => setCardAdded(true)}
-                            size="lg"
-                            className="!px-9"
-                          >
-                            Use card
-                          </Button>
-                        </form>
-                      )}
-                    </div> */}
                   </li>
-
-                  {/* <li>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      id="paymentGooglePay"
-                      className="peer hidden"
-                      value="paymentGooglePay"
-                    />
-                    <label
-                      htmlFor="paymentGooglePay"
-                      className="group flex cursor-pointer justify-between rounded-sm border px-4 py-4 transition-all peer-hover:border-primary"
-                    >
-                      <div className="flex items-center">
-                        <span className="relative block h-4 w-4 rounded-full border border-gray-900 transition-all group-hover:border-primary" />
-                        <p className="ml-3">Google Pay</p>
-                      </div>
-
-                      <Image
-                        src={'/images/content/gpay.png'}
-                        height={24}
-                        width={34}
-                        alt="Google Pay"
-                      />
-                    </label>
-                  </li> */}
-
-                  {/* <li>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      id="paymentApplePay"
-                      className="peer hidden"
-                      value="paymentApplePay"
-                    />
-                    <label
-                      htmlFor="paymentApplePay"
-                      className="group flex cursor-pointer justify-between rounded-sm border px-4 py-4 transition-all peer-hover:border-primary"
-                    >
-                      <div className="flex items-center">
-                        <span className="relative block h-4 w-4 rounded-full border border-gray-900 transition-all group-hover:border-primary" />
-                        <p className="ml-3">Apple Pay</p>
-                      </div>
-
-                      <Image
-                        src={'/images/content/apay.png'}
-                        height={24}
-                        width={34}
-                        alt="Apple Pay"
-                      />
-                    </label>
-                  </li> */}
-
-                  {/* <li>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      id="paymentPayPal"
-                      className="peer hidden"
-                      value="paymentPayPal"
-                    />
-                    <label
-                      htmlFor="paymentPayPal"
-                      className="group flex cursor-pointer justify-between rounded-sm border border-red-700 px-4 py-4 transition-all hover:!border-red-900"
-                    >
-                      <div className="flex items-center">
-                        <span className="relative block h-4 w-4 rounded-full border border-red-700 transition-all group-hover:border-red-900" />
-                        <p className="ml-3">Pay Pal</p>
-                      </div>
-
-                      <Image
-                        src={'/images/content/paypal.png'}
-                        height={24}
-                        width={34}
-                        alt="PayPal"
-                      />
-                    </label>
-                  </li> */}
                 </ul>
               </div>
             )}
           </li>
         </ul>
-        <Link href="/order-confirmation">
-          <Button
-            size="lg"
-            className="mt-10 w-full"
-            isDisabled={step !== 4}
-            onPress={handlePlaceOrder}
-          >
-            Place an order
-          </Button>
-        </Link>
+        <Button
+          size="lg"
+          className="mt-10 w-full"
+          isDisabled={step !== 4}
+          onPress={handlePlaceOrder}
+        >
+          Place an order
+        </Button>
+
       </div>
 
       <ul className="top-0 bg-gray-50 lg:sticky lg:h-screen lg:w-1/2 xl:w-[45%]">
@@ -999,7 +777,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                     <p className="text-xs sm:text-md">{item.title}</p>
                     <ul className="relative items-center gap-2 text-xs sm:mt-0 sm:block sm:self-start">
                       <li className="font-bold text-red-700 sm:text-md">
-                      {(item?.original_total! - item?.raw_discount_total!) / 100}{' '}
+                        {(item?.original_total! - item?.raw_discount_total!) /
+                          100}{' '}
                         {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                       </li>
                       {/* <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
@@ -1035,7 +814,7 @@ const CheckoutPage: NextPageWithLayout = () => {
             </Button>
 
             {invalidDiscount && (
-              <p className="text-red-600">
+              <p className="text-red-700">
                 Invalid discount code. Please try again.
               </p>
             )}
@@ -1067,7 +846,7 @@ const CheckoutPage: NextPageWithLayout = () => {
               <ul className="flex justify-between pr-2 text-xs sm:text-sm">
                 <li>Shipping</li>
                 <li>
-                  {(cart?.shipping_methods?.[0]?.price! / 100).toFixed(2)}{' '}
+                  {((cart?.shipping_methods?.[0]?.price || 0) / 100).toFixed(2)}{' '}
                   {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                 </li>
               </ul>
@@ -1077,7 +856,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                 <li>Total</li>
                 <li>
                   {' '}
-                  {(cart?.subtotal! - cart?.discount_total! + cart?.shipping_total!) / 100}{' '}
+                  {(cart?.subtotal! -
+                    cart?.discount_total! +
+                    cart?.shipping_total!) /
+                    100}{' '}
                   {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                 </li>
               </ul>

@@ -7,10 +7,32 @@ import DefaultLayout from '@/layouts/DefaultLayout';
 import { Button } from '@/components/ui/Button';
 import { Heading } from '@/components/ui/Heading';
 import { useStore } from '@/lib/context/store-context';
+import { useRouter } from 'next/router';
+
+import { MEDUSA_BACKEND_URL, medusaClient } from '../lib/config';
+import Medusa from '@medusajs/medusa-js';
+import { Order } from '@medusajs/medusa';
+import { useEffect, useState } from 'react';
+
+const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
 const OrderConfirmationPage: NextPageWithLayout = () => {
   const { cart } = useStore();
-  console.log(cart);
+  const router = useRouter();
+  const { id } = router.query as { id: string };
+  
+  const [orderData, setOrderData] = useState<Order | undefined>(undefined);
+
+  useEffect(() => {
+    medusa.orders.retrieve(id)
+      .then(({ order }:any) => {
+        console.log('Order Data:', order);
+        setOrderData(order);
+      })
+      .catch((error) => {
+        console.error('Error fetching order data:', error);
+      });
+  }, [id]);
   
   return (
     <main className="grid-cols-12 px-4 py-10 md:px-24 lg:grid lg:px-0 lg:pb-50 lg:pt-19">
@@ -36,19 +58,20 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
         <div className="mb-16 flex flex-col justify-between gap-20 sm:flex-row">
           <div>
             <p className="mb-2">Your order number is:</p>
-            <p className="font-bold">100002</p>
+            <p className="font-bold">{orderData?.id}</p>
 
             <ul className="mt-8 text-gray-600 sm:mt-16">
               <li className="mb-2">Shipping adress:</li>
-              {cart?.shipping_address?.address_1},{' '}
-              {cart?.shipping_address?.postal_code}{' '}
-              {cart?.shipping_address?.city},{' '}
+              {orderData?.shipping_address.address_1},{' '}<br/>
+              {orderData?.shipping_address.postal_code}{' '}
+              {orderData?.shipping_address.city},{' '}
               {
-                cart?.region?.countries.find(
+                orderData?.region?.countries?.find(
                   (country: any) =>
-                    country?.iso_2 === cart?.shipping_address?.country_code
+                    country?.iso_2 === orderData?.shipping_address?.country_code
                 )?.display_name
               }
+              {orderData?.shipping_address.country_code}
             </ul>
           </div>
 
@@ -58,9 +81,9 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
 
             <ul className="mt-8 text-gray-600 sm:mt-16">
               <li className="mb-2">Payment:</li>
-              <li>Jovana Jerimic</li>
-              <li>**** **** **** 1111</li>
-              <li>Exp: 05/26</li>
+              <li>{orderData?.shipping_address.first_name}{' '}
+              {orderData?.shipping_address.last_name}{' '}</li>
+              <li>CASH</li>
             </ul>
           </div>
         </div>

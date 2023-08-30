@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import { Tag } from '@/components/ui/Tag';
 import { SelectCountry } from '@/components/SelectCountry';
-import { Country, ShippingMethod, ShippingOption } from '@medusajs/medusa';
+import {Country, ShippingMethod, ShippingOption, StorePostCartsCartReq} from '@medusajs/medusa';
 import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
 import { useCart } from 'medusa-react';
@@ -32,12 +32,12 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const account = useAccount();
   const { cart } = useStore();
+  const { updateCart, setCart } = useCart();
 
   const [shippingOptions, setShippingOptions] = React.useState<
     PricedShippingOption[] | undefined
   >();
   const [selectedMethod, setSelectedMethod] = useState<any>(null);
-  const [cartShippingMethods, setCartShippingMethods] = useState<any>([]);
 
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
@@ -76,14 +76,12 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const addShippingMethod = async () => {
     if (selectedMethod) {
-      console.log('SELECted Method', selectedMethod);
       await medusa.carts
         .addShippingMethod(cart?.id as string, {
           option_id: selectedMethod,
         })
         .then(({ cart }: any) => {
-          console.log('SHIP MET THEN', cart.shipping_methods);
-          setCartShippingMethods(cart?.shipping_methods);
+          setCart(cart)
         })
         .catch((error) => {
           console.error('Error', error);
@@ -125,8 +123,6 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
     shippingMethodSelection();
   }, [step, cart]);
-
-  const { updateCart } = useCart();
 
   const copyBillingAddress = () => {
     const shippingAddress = account.customer?.shipping_addresses[0];

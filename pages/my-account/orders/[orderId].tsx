@@ -10,18 +10,36 @@ import { Heading } from '@/components/ui/Heading';
 import * as Dialog from '@/components/ui/Dialog';
 import { useRouter } from 'next/router';
 import { useOrder } from 'medusa-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Medusa from '@medusajs/medusa-js';
+import { MEDUSA_BACKEND_URL } from '@/lib/config';
 
 const OrderReturnModal: React.FC = () => {
   const [returnModalStep, setReturnModalStep] = React.useState<
     false | 'form' | 'success'
   >(false);
-  
+
+  // const router = useRouter();
+  // const orderId = router.query.orderId;
+  // const { order, isLoading } = useOrder(
+  //   typeof orderId === 'string' ? orderId : ''
+  // );
+
   const router = useRouter();
-  const orderId = router.query.orderId;
-  const { order, isLoading } = useOrder(
-    typeof orderId === 'string' ? orderId : ''
-  );
+  const [orders, setOrders] = useState<any>();
+
+  const fetchOrder = async (orderId: string) => {
+    const { order } = await medusa.orders.retrieve(orderId);
+    setOrders(order);
+  };
+  console.log(orders);
+
+  useEffect(() => {
+    const orderId = router.query.orderId;
+    if (orderId) {
+      fetchOrder(orderId as string);
+    }
+  }, [router]);
 
   return (
     <>
@@ -47,165 +65,51 @@ const OrderReturnModal: React.FC = () => {
           </Dialog.Title>
           <div className="px-6">
             <ul className="mb-8 [&>li:last-child]:mb-0 [&>li:last-child]:border-b-0 [&>li:last-child]:pb-0 [&>li]:mb-4 [&>li]:border-b [&>li]:border-gray-100 [&>li]:pb-4">
-              <li className="relative flex justify-between">
-                <input
-                  type="checkbox"
-                  name="returnItem"
-                  id="returnItem2"
-                  className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                />
+              {orders?.items?.map((item: any) => (
+                <li
+                  key={item.id}
+                  className="relative flex justify-between"
+                >
+                  <input
+                    type="checkbox"
+                    name="returnItem"
+                    id="returnItem2"
+                    className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
+                  />
+                  <Image
+                    src={item.thumbnail}
+                    height={200}
+                    width={150}
+                    alt={item.title}
+                    className="mr-8"
 
-                <Image
-                  src="/images/content/red-t-shirt.jpg"
-                  height={200}
-                  width={150}
-                  alt="White T-shirt"
-                  className="mr-8"
-                />
-
-                <ul className="relative mr-auto text-xs">
-                  <li className="text-sm text-black">Sweat absorbent</li>
-                  <li className="text-gray-400">
-                    Color: <span className="ml-1 text-black">White</span>
-                  </li>
-                  <li className="text-gray-400">
-                    Size: <span className="ml-1 text-black">S</span>
-                  </li>
-                  <li className="absolute bottom-0 text-gray-400">
-                    Quantity: <span className="ml-1 text-black">1</span>
-                  </li>
-                </ul>
-
-                <span className="block self-end">€30</span>
-              </li>
-
-              <li className="relative flex justify-between">
-                <input
-                  type="checkbox"
-                  name="returnItem"
-                  id="returnItem2"
-                  className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                />
-
-                <Image
-                  src="/images/content/red-t-shirt.jpg"
-                  height={200}
-                  width={150}
-                  alt="White T-shirt"
-                  className="mr-8"
-                />
-
-                <ul className="relative mr-auto text-xs">
-                  <li className="text-sm text-black">Sweat absorbent</li>
-                  <li className="text-gray-400">
-                    Color: <span className="ml-1 text-black">White</span>
-                  </li>
-                  <li className="text-gray-400">
-                    Size: <span className="ml-1 text-black">L</span>
-                  </li>
-                  <li className="absolute bottom-0 text-gray-400">
-                    Quantity: <span className="ml-1 text-black">1</span>
-                  </li>
-                </ul>
-
-                <span className="block self-end">€30</span>
-              </li>
-
-              <li className="relative flex justify-between">
-                <input
-                  type="checkbox"
-                  name="returnItem"
-                  id="returnItem3"
-                  className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                />
-
-                <Image
-                  src="/images/content/red-t-shirt.jpg"
-                  height={200}
-                  width={150}
-                  alt="White T-shirt"
-                  className="mr-8"
-                />
-
-                <ul className="relative mr-auto text-xs">
-                  <li className="text-sm text-black">Sweat absorbent</li>
-                  <li className="text-gray-400">
-                    Color: <span className="ml-1 text-black">White</span>
-                  </li>
-                  <li className="text-gray-400">
-                    Size: <span className="ml-1 text-black">M</span>
-                  </li>
-                  <li className="absolute bottom-0 text-gray-400">
-                    Quantity: <span className="ml-1 text-black">1</span>
-                  </li>
-                </ul>
-
-                <span className="block self-end">€30</span>
-              </li>
-
-              <li className="relative flex justify-between">
-                <input
-                  type="checkbox"
-                  name="returnItem"
-                  id="returnItem4"
-                  className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                />
-
-                <Image
-                  src="/images/content/red-t-shirt.jpg"
-                  height={200}
-                  width={150}
-                  alt="White T-shirt"
-                  className="mr-8"
-                />
-
-                <ul className="relative mr-auto text-xs">
-                  <li className="text-sm text-black">Sweat absorbent</li>
-                  <li className="text-gray-400">
-                    Color: <span className="ml-1 text-black">White</span>
-                  </li>
-                  <li className="text-gray-400">
-                    Size: <span className="ml-1 text-black">XL</span>
-                  </li>
-                  <li className="absolute bottom-0 text-gray-400">
-                    Quantity: <span className="ml-1 text-black">1</span>
-                  </li>
-                </ul>
-
-                <span className="block self-end">€30</span>
-              </li>
-
-              <li className="relative flex justify-between">
-                <input
-                  type="checkbox"
-                  name="returnItem"
-                  id="returnItem4"
-                  className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                />
-
-                <Image
-                  src="/images/content/red-t-shirt.jpg"
-                  height={200}
-                  width={150}
-                  alt="White T-shirt"
-                  className="mr-8"
-                />
-
-                <ul className="relative mr-auto text-xs">
-                  <li className="text-sm text-black">Sweat absorbent</li>
-                  <li className="text-gray-400">
-                    Color: <span className="ml-1 text-black">White</span>
-                  </li>
-                  <li className="text-gray-400">
-                    Size: <span className="ml-1 text-black">XL</span>
-                  </li>
-                  <li className="absolute bottom-0 text-gray-400">
-                    Quantity: <span className="ml-1 text-black">1</span>
-                  </li>
-                </ul>
-
-                <span className="block self-end">€30</span>
-              </li>
+                  />
+                  <div className="flex flex-1 flex-wrap justify-between gap-4 sm:flex-row">
+                    <ul className="relative mr-auto whitespace-nowrap text-xs [&>li:last-child]:mb-0 [&>li]:mb-1">
+                      <li className="text-sm text-black">{item.title}</li>
+                      <li className="text-gray-400">
+                        {/* Color:{' '} */}
+                        <span className="ml-1 text-black">
+                          {item.variant.title}
+                        </span>
+                      </li>
+                      {/* <li className="text-gray-400">
+                    Size:{' '}
+                    <span className="ml-1 text-black">{item.variant.size}</span>
+                  </li> */}
+                      <li className="bottom-0 text-gray-400 sm:absolute">
+                        Quantity:{' '}
+                        <span className="ml-1 text-black">{item.quantity}</span>
+                      </li>
+                    </ul>
+                      <span className="mt-auto block self-end">
+                      {'€'} {(item.total / 100).toFixed(2)}
+                        
+                      </span>
+                  </div>
+                </li>
+              ))}
+              
             </ul>
           </div>
           <div className="sticky bottom-0 bg-white px-6 pb-6">
@@ -256,24 +160,31 @@ const OrderReturnModal: React.FC = () => {
   );
 };
 
+const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
+
 const MyAccountOrderSinglePage: NextPageWithLayout = () => {
   const router = useRouter();
-  const orderId = router.query.orderId;
-  const { order, isLoading } = useOrder(
-    typeof orderId === 'string' ? orderId : ''
-  );
-  console.log(order);
-  const [orders, setOrders] = useState(order);
+  const [orders, setOrders] = useState<any>();
+
+  const fetchOrder = async (orderId: string) => {
+    const { order } = await medusa.orders.retrieve(orderId);
+    setOrders(order);
+  };
   console.log(orders);
-  
-  
+
+  useEffect(() => {
+    const orderId = router.query.orderId;
+    if (orderId) {
+      fetchOrder(orderId as string);
+    }
+  }, [router]);
 
   return (
     <div>
       <Heading className="mb-5 text-primary" size="xl">
         Order:
         <span className="ml-3 text-lg font-light not-italic text-black lg:ml-6">
-          {order?.display_id}
+          {orders?.display_id}
         </span>
       </Heading>
 
@@ -311,9 +222,12 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
         <span className="ml-4 mr-auto block text-gray-400">Order date</span>
 
-        <span className="block">{new Date(order.created_at).toLocaleDateString()}</span>
-        
-      </div >
+        {orders?.created_at && (
+          <span className="block">
+            {new Date(orders.created_at).toLocaleDateString()}
+          </span>
+        )}
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-4">
         <div className="flex flex-1 flex-col items-start justify-between rounded-sm border border-gray-200 p-4 sm:flex-row">
@@ -327,12 +241,18 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
           </div>
 
           <ul className="sm:text-end [&>li:last-child]:mb-0 [&>li]:mb-1">
-            <li>{order?.shipping_address.first_name}{' '}{order?.shipping_address.last_name}</li>
-            <li>{order?.shipping_address.address_1}</li>
-            <li>{order?.shipping_address.postal_code} {' '}{order?.shipping_address.city}</li>
-            <li>{order?.shipping_address.country_code}</li> 
+            <li>
+              {orders?.shipping_address.first_name}{' '}
+              {orders?.shipping_address.last_name}
+            </li>
+            <li>{orders?.shipping_address.address_1}</li>
+            <li>
+              {orders?.shipping_address.postal_code}{' '}
+              {orders?.shipping_address.city}
+            </li>
+            <li>{orders?.shipping_address.country_code}</li>
             {/* opet ovo isto */}
-            <li>{order?.shipping_address.phone}</li>
+            <li>{orders?.shipping_address.phone}</li>
           </ul>
         </div>
 
@@ -357,119 +277,44 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
       </div>
 
       <ul className="mb-4 rounded-sm border border-gray-200 p-2 [&>li:last-child]:mb-0 [&>li:last-child]:before:hidden [&>li]:relative [&>li]:mb-4 [&>li]:p-2 [&>li]:before:absolute [&>li]:before:-bottom-2 [&>li]:before:left-0 [&>li]:before:h-[0.0625rem] [&>li]:before:w-full [&>li]:before:bg-gray-100 [&>li]:before:content-['']">
-        <li className="group relative flex flex-wrap justify-between gap-8">
-          <Image
-            src="/images/content/red-t-shirt.jpg"
-            height={200}
-            width={150}
-            alt="White T-shirt"
-          />
+        {orders?.items?.map((item: any) => (
+          <li
+            key={item.id}
+            className="group relative flex flex-wrap justify-between gap-8 bg-gray-30"
+          >
+            <Image
+              src={item.thumbnail}
+              height={200}
+              width={150}
+              alt={item.title}
+            />
+            <div className="flex flex-1 flex-wrap justify-between gap-4 sm:flex-row">
+              <ul className="relative mr-auto whitespace-nowrap text-xs [&>li:last-child]:mb-0 [&>li]:mb-1">
+                <li className="text-sm text-black">{item.title}</li>
+                <li className="text-gray-400">
+                  {/* Color:{' '} */}
+                  <span className="ml-1 text-black">{item.variant.title}</span>
+                </li>
+                {/* <li className="text-gray-400">
+                    Size:{' '}
+                    <span className="ml-1 text-black">{item.variant.size}</span>
+                  </li> */}
+                <li className="bottom-0 text-gray-400 sm:absolute">
+                  Quantity:{' '}
+                  <span className="ml-1 text-black">{item.quantity}</span>
+                </li>
+              </ul>
+              <div className="flex justify-between gap-4 sm:h-full sm:flex-col">
+                <Tag variant="informative">Returned</Tag>
 
-          <div className="flex flex-1 flex-wrap justify-between gap-4 sm:flex-row">
-            <ul className="relative mr-auto whitespace-nowrap text-xs [&>li:last-child]:mb-0 [&>li]:mb-1">
-              <li className="text-sm text-black">Sweat absorbent</li>
-              <li className="text-gray-400">
-                Color: <span className="ml-1 text-black">White</span>
-              </li>
-              <li className="text-gray-400">
-                Size: <span className="ml-1 text-black">S</span>
-              </li>
-              <li className="bottom-0 text-gray-400 sm:absolute">
-                Quantity: <span className="ml-1 text-black">1</span>
-              </li>
-            </ul>
-
-            <span className="mt-auto block self-end">€30</span>
-          </div>
-        </li>
-
-        <li className="group relative flex flex-wrap justify-between gap-8 bg-gray-30">
-          <Image
-            src="/images/content/red-t-shirt.jpg"
-            height={200}
-            width={150}
-            alt="White T-shirt"
-          />
-
-          <div className="flex flex-1 flex-col flex-wrap justify-between gap-4 sm:flex-row">
-            <ul className="relative mr-auto whitespace-nowrap text-xs  [&>li:last-child]:mb-0 [&>li]:mb-1">
-              <li className="text-sm text-black">Sweat absorbent</li>
-              <li className="text-gray-400">
-                Color: <span className="ml-1 text-black">White</span>
-              </li>
-              <li className="text-gray-400">
-                Size: <span className="ml-1 text-black">L</span>
-              </li>
-              <li className="bottom-0 text-gray-400 sm:absolute">
-                Quantity: <span className="ml-1 text-black">1</span>
-              </li>
-            </ul>
-
-            <div className="flex justify-between gap-4 sm:h-full sm:flex-col">
-              <Tag variant="informative">Returned</Tag>
-
-              <span className="mt-auto block self-end">€30</span>
+                <span className="mt-auto block self-end">
+                  {(item.total / 100).toFixed(2)}
+                  {'€'}
+                </span>
+              </div>
             </div>
-          </div>
-        </li>
-
-        <li className="group relative flex flex-wrap justify-between gap-8">
-          <Image
-            src="/images/content/red-t-shirt.jpg"
-            height={200}
-            width={150}
-            alt="White T-shirt"
-          />
-
-          <div className="flex flex-1 flex-wrap justify-between gap-4 sm:flex-row">
-            <ul className="relative mr-auto whitespace-nowrap text-xs  [&>li:last-child]:mb-0 [&>li]:mb-1">
-              <li className="text-sm text-black">Sweat absorbent</li>
-              <li className="text-gray-400">
-                Color: <span className="ml-1 text-black">White</span>
-              </li>
-              <li className="text-gray-400">
-                Size: <span className="ml-1 text-black">M</span>
-              </li>
-              <li className="bottom-0 text-gray-400 sm:absolute">
-                Quantity: <span className="ml-1 text-black">1</span>
-              </li>
-            </ul>
-
-            <div className="flex justify-between gap-4 sm:h-full sm:flex-col">
-              <span className="mt-auto block self-end">€30</span>
-            </div>
-          </div>
-        </li>
-
-        <li className="group relative flex flex-wrap justify-between gap-8 bg-gray-30">
-          <Image
-            src="/images/content/red-t-shirt.jpg"
-            height={200}
-            width={150}
-            alt="White T-shirt"
-          />
-
-          <div className="flex flex-1 flex-col flex-wrap justify-between gap-4 sm:flex-row">
-            <ul className="relative mr-auto whitespace-nowrap text-xs  [&>li:last-child]:mb-0 [&>li]:mb-1">
-              <li className="text-sm text-black">Sweat absorbent</li>
-              <li className="text-gray-400">
-                Color: <span className="ml-1 text-black">White</span>
-              </li>
-              <li className="text-gray-400">
-                Size: <span className="ml-1 text-black">XL</span>
-              </li>
-              <li className="bottom-0 text-gray-400 sm:absolute">
-                Quantity: <span className="ml-1 text-black">1</span>
-              </li>
-            </ul>
-
-            <div className="flex justify-between gap-4 sm:h-full sm:flex-col">
-              <Tag variant="informative">Returned</Tag>
-
-              <span className="mt-auto block self-end">€30</span>
-            </div>
-          </div>
-        </li>
+          </li>
+        ))}
       </ul>
 
       <div className="mb-4 flex flex-wrap justify-between gap-20 rounded-sm border border-gray-200 p-4">
@@ -481,17 +326,19 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
           </div>
 
           <div className="flex items-start">
-            <Image
+            {/* <Image
               src={'/images/content/visa.png'}
               height={24}
               width={34}
               alt="Visa"
-            />
+            /> */}
 
             <ul className="ml-4 [&>li:last-child]:mb-0 [&>li]:mb-2">
-              <li>Jovana Jerimic</li>
-              <li>**** **** **** 1111</li>
-              <li>Exp: 05/26</li>
+              <li>
+                {orders?.shipping_address.first_name}{' '}
+                {orders?.shipping_address.last_name}
+              </li>
+              <li>CASH</li>
             </ul>
           </div>
         </div>
@@ -500,22 +347,44 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
           <li>
             <ul className="flex justify-between gap-20">
               <li className="text-gray-400">Subtotal</li>
-              <li>€120</li>
+              <li>
+                {(orders?.subtotal / 100).toFixed(2)}{' '}
+                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+              </li>
+            </ul>
+          </li>
+          <li>
+            <ul className="flex justify-between gap-20">
+              <li className="text-red-700"> Discount</li>
+              <li className="text-red-700">
+                {' '}
+                -{(orders?.discount_total! / 100).toFixed(2)}{' '}
+                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+              </li>
             </ul>
           </li>
           <li className="!mb-6">
             <ul className="flex justify-between gap-20">
               <li className="text-gray-400">Shipping</li>
-              <li>€15</li>
+              <li>
+                {(orders?.shipping_total / 100).toFixed(2)}{' '}
+                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+              </li>
             </ul>
           </li>
           <li>
             <ul className="flex justify-between gap-20 text-lg">
               <li>Total</li>
-              <li>€135</li>
+              <li>
+                {(orders?.total / 100).toFixed(2)}
+                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+              </li>
             </ul>
           </li>
-          <li className="text-gray-400">Including 11.25 tax</li>
+          <li className="text-gray-400">
+            Including {orders?.tax_total}{' '}
+            {orders?.region?.currency_code === 'eur' ? '€' : '£'} tax
+          </li>
         </ul>
       </div>
 

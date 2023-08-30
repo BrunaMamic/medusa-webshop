@@ -62,16 +62,24 @@ const MyAccountOrdersPage: NextPageWithLayout = () => {
               </ul>
               <ul className="flex [&>li:last-child]:mr-0 [&>li]:mr-4">
                 <div className="flex p-2">
-                  {order.items.map((item: any) => (
-                    <li key={item.id}>
-                      <Image
-                        src={item.thumbnail}
-                        height={150}
-                        width={100}
-                        alt={item.title}
-                      />
-                    </li>
-                  ))}
+                  {order.items
+                    .filter(
+                      (item: any, index: number) =>
+                        index ===
+                        order.items.findIndex(
+                          (i: any) => item.title === i.title
+                        )
+                    )
+                    .map((item: any) => (
+                      <li key={item.id}>
+                        <Image
+                          src={item.thumbnail}
+                          height={150}
+                          width={100}
+                          alt={item.title}
+                        />
+                      </li>
+                    ))}
                 </div>
               </ul>
             </div>

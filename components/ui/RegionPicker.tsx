@@ -1,3 +1,4 @@
+import { useStore } from '@/lib/context/store-context';
 import classNames from '@/utils/classNames';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 
@@ -14,6 +15,9 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
   defaultValue,
   selectedValue,
 }) => {
+  const {cart} = useStore()
+  console.log(cart?.region);
+  
   return (
     <Dropdown.Root>
       <Dropdown.Trigger asChild>
@@ -39,7 +43,16 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
         sideOffset={10}
         align="end"
       >
-        <Dropdown.Item
+        {cart?.region?.countries.map((country:any) => (
+          <Dropdown.Item
+            key={country.id}
+            className="dropdown-item font-black italic text-primary hover:bg-transparent"
+            id={country.id}
+          >
+            {country.display_name}
+          </Dropdown.Item>
+        ))}
+        {/* <Dropdown.Item
           className="dropdown-item font-black italic text-primary hover:bg-transparent"
           id="hr"
         >
@@ -56,7 +69,7 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
         </Dropdown.Item>
         <Dropdown.Item className="dropdown-item hover:bg-transparent" id="nl">
           Netherlands
-        </Dropdown.Item>
+        </Dropdown.Item> */}
       </Dropdown.Content>
     </Dropdown.Root>
   );

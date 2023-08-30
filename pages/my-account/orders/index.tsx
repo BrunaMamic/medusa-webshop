@@ -24,7 +24,11 @@ const MyAccountOrdersPage: NextPageWithLayout = () => {
 
   const getAllOrders = () => {
     medusa.customers
-      .listOrders()
+      .listOrders({
+        expand: 'billing_address',
+        limit: 10, 
+        offset: 0,
+      })
       .then(({ orders }) => {
         console.log(orders);
         setOrders(orders as any);

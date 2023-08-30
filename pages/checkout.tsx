@@ -28,6 +28,8 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
   const [cardAdded, setCardAdded] = React.useState(false);
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
+  const [email, setEmail] = useState()
+  
   const router = useRouter();
 
   const account = useAccount();
@@ -341,6 +343,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                   name="email"
                   wrapperClassName="[&>span]:static"
                   defaultValue={cart?.email}
+                  disabled={account.customer}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
 
                 <div className="mt-3.5 flex items-start gap-1">
@@ -378,7 +382,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                 </li>
 
                 <li className="w-2/3 break-words text-gray-600 md:w-4/5">
-                  {account.customer?.email}
+                  {account.customer ? account.customer.email : email}
                 </li>
               </ul>
             )}

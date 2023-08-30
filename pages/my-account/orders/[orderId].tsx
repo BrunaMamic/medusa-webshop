@@ -19,14 +19,9 @@ const OrderReturnModal: React.FC = () => {
     false | 'form' | 'success'
   >(false);
 
-  // const router = useRouter();
-  // const orderId = router.query.orderId;
-  // const { order, isLoading } = useOrder(
-  //   typeof orderId === 'string' ? orderId : ''
-  // );
-
   const router = useRouter();
   const [orders, setOrders] = useState<any>();
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const fetchOrder = async (orderId: string) => {
     const { order } = await medusa.orders.retrieve(orderId);
@@ -40,6 +35,42 @@ const OrderReturnModal: React.FC = () => {
       fetchOrder(orderId as string);
     }
   }, [router]);
+
+  console.log(selectedItems);
+
+  const handleCreateReturn = async () => {
+    try {
+      const returnRequest = {
+        order_id: orders.id,
+        items: selectedItems.map((selectedItem) => ({
+          item_id: selectedItem.id,
+          quantity: selectedItem.quantity,
+        })),
+        // return_shipping: {
+        //   option_id: orders.shipping_method?.[0]?.shipping_option_id,
+        // },
+      };
+      const { return: createdReturn } = await medusa.returns.create(
+        returnRequest
+      );
+
+      console.log('Return id:', createdReturn.id);
+      console.log(createdReturn);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleCheckboxChange = (itemId: string) => {
+    if (selectedItems.some((item) => item.id === itemId)) {
+      setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
+    } else {
+      setSelectedItems([
+        ...selectedItems,
+        orders.items.find((item: any) => item.id === itemId),
+      ]);
+    }
+  };
 
   return (
     <>
@@ -56,7 +87,12 @@ const OrderReturnModal: React.FC = () => {
         }}
       >
         <Dialog.Trigger asChild>
-          <Button variant="secondary">Return</Button>
+          <Button
+            variant="secondary"
+            isDisabled={orders?.fulfillment_status !== 'shipped'}
+          >
+            Return
+          </Button>
         </Dialog.Trigger>
         <Dialog.Overlay />
         <Dialog.Content containerSize="lg" className="p-0">
@@ -66,15 +102,16 @@ const OrderReturnModal: React.FC = () => {
           <div className="px-6">
             <ul className="mb-8 [&>li:last-child]:mb-0 [&>li:last-child]:border-b-0 [&>li:last-child]:pb-0 [&>li]:mb-4 [&>li]:border-b [&>li]:border-gray-100 [&>li]:pb-4">
               {orders?.items?.map((item: any) => (
-                <li
-                  key={item.id}
-                  className="relative flex justify-between"
-                >
+                <li key={item.id} className="relative flex justify-between">
                   <input
                     type="checkbox"
                     name="returnItem"
                     id="returnItem2"
                     className="absolute right-0 mt-1 h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
+                    checked={selectedItems.some(
+                      (selectedItem) => selectedItem.id === item.id
+                    )}
+                    onChange={() => handleCheckboxChange(item.id)}
                   />
                   <Image
                     src={item.thumbnail}
@@ -82,7 +119,6 @@ const OrderReturnModal: React.FC = () => {
                     width={150}
                     alt={item.title}
                     className="mr-8"
-
                   />
                   <div className="flex flex-1 flex-wrap justify-between gap-4 sm:flex-row">
                     <ul className="relative mr-auto whitespace-nowrap text-xs [&>li:last-child]:mb-0 [&>li]:mb-1">
@@ -102,14 +138,12 @@ const OrderReturnModal: React.FC = () => {
                         <span className="ml-1 text-black">{item.quantity}</span>
                       </li>
                     </ul>
-                      <span className="mt-auto block self-end">
+                    <span className="mt-auto block self-end">
                       {'€'} {(item.total / 100).toFixed(2)}
-                        
-                      </span>
+                    </span>
                   </div>
                 </li>
               ))}
-              
             </ul>
           </div>
           <div className="sticky bottom-0 bg-white px-6 pb-6">
@@ -119,6 +153,7 @@ const OrderReturnModal: React.FC = () => {
                 variant="primary"
                 onPress={() => {
                   setReturnModalStep('success');
+                  handleCreateReturn();
                 }}
               >
                 Return
@@ -167,10 +202,13 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
   const [orders, setOrders] = useState<any>();
 
   const fetchOrder = async (orderId: string) => {
-    const { order } = await medusa.orders.retrieve(orderId);
+    const { order } = await medusa.orders.retrieve(orderId,  {
+      expand: ['billing_address'], 
+    });
     setOrders(order);
   };
   console.log(orders);
+  
 
   useEffect(() => {
     const orderId = router.query.orderId;
@@ -197,22 +235,21 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <ul className="flex flex-wrap gap-y-2 [&>li:first-child]:ml-0 [&>li:last-child]:before:-left-4 [&>li]:relative [&>li]:ml-4 [&>li]:before:absolute [&>li]:before:-right-4 [&>li]:before:top-3.5 [&>li]:before:h-[0.0625rem] [&>li]:before:w-4 [&>li]:before:bg-gray-100 [&>li]:before:content-['']">
             <li className="before:bg-primary">
-              <Tag icon="package" hasBorder>
+              <Tag icon="package" hasBorder={orders?.fulfillment_status === 'not_fulfilled' ? true : false} disabled={orders?.fulfillment_status !== 'not_fulfilled' ? true : false}>
                 Packing
               </Tag>
             </li>
             <li className='after:absolute after:-left-4 after:top-3.5 after:h-[0.0625rem] after:w-4 after:bg-gray-100 after:content-[""]'>
-              <Tag icon="truck" disabled>
+              <Tag icon="truck" hasBorder={orders?.fulfillment_status !== 'shipped' ? true : false} disabled={orders?.fulfillment_status === 'shipped' ? true : false}>
                 Delivering
               </Tag>
             </li>
             <li>
-              <Tag icon="check" disabled>
+              <Tag icon="check" hasBorder={orders?.fulfillment_status === 'shipped' ? true : false} disabled={orders?.fulfillment_status !== 'shipped' ? true : false}>
                 Delivered
               </Tag>
             </li>
           </ul>
-
           <Button variant="secondary">Check status</Button>
         </div>
       </div>
@@ -242,17 +279,17 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
           <ul className="sm:text-end [&>li:last-child]:mb-0 [&>li]:mb-1">
             <li>
-              {orders?.shipping_address.first_name}{' '}
-              {orders?.shipping_address.last_name}
+              {orders?.shipping_address?.first_name}{' '}
+              {orders?.shipping_address?.last_name}
             </li>
-            <li>{orders?.shipping_address.address_1}</li>
+            <li>{orders?.shipping_address?.address_1}</li>
             <li>
-              {orders?.shipping_address.postal_code}{' '}
-              {orders?.shipping_address.city}
+              {orders?.shipping_address?.postal_code}{' '}
+              {orders?.shipping_address?.city}
             </li>
-            <li>{orders?.shipping_address.country_code}</li>
+            <li>{orders?.shipping_address?.country_code}</li>
             {/* opet ovo isto */}
-            <li>{orders?.shipping_address.phone}</li>
+            <li>{orders?.shipping_address?.phone}</li>
           </ul>
         </div>
 
@@ -305,7 +342,14 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
                 </li>
               </ul>
               <div className="flex justify-between gap-4 sm:h-full sm:flex-col">
-                <Tag variant="informative">Returned</Tag>
+                {/* {orders.fulfillment_status === 'returned' ? <Tag variant="informative">{(orders.fulfillment_status).toUpperCase()}</Tag>: <Tag variant="informative">{(orders.status).toUpperCase()}</Tag>} */}
+                {orders.fulfillment_status === 'not_fulfilled' ? (
+                  <Tag variant="informative">{orders.status.toUpperCase()}</Tag>
+                ) : (
+                  <Tag variant="informative">
+                    {orders.fulfillment_status.toUpperCase()}
+                  </Tag>
+                )}
 
                 <span className="mt-auto block self-end">
                   {(item.total / 100).toFixed(2)}
@@ -335,8 +379,8 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
             <ul className="ml-4 [&>li:last-child]:mb-0 [&>li]:mb-2">
               <li>
-                {orders?.shipping_address.first_name}{' '}
-                {orders?.shipping_address.last_name}
+                {orders?.shipping_address?.first_name}{' '}
+                {orders?.shipping_address?.last_name}
               </li>
               <li>CASH</li>
             </ul>

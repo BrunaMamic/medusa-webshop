@@ -2,6 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/my-account/orders/[orderId]": "pages/my-account/orders/[orderId].js",
-  "/my-account/orders": "pages/my-account/orders.js"
+  "/my-account": "pages/my-account.js",
+  "/checkout": "pages/checkout.js",
+  "/": "pages/index.js"
 }

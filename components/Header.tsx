@@ -119,6 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
           <RegionPicker
               colorScheme={colorScheme}
               defaultValue={{ id: 'hr', currency: 'eur' }}
+              
             />
           </li>
           <li>

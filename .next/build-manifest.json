@@ -22,6 +22,26 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
+    "/my-account": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/my-account.js"
+    ],
+    "/my-account/login": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/my-account/login.js"
+    ],
+    "/my-account/orders": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/my-account/orders.js"
+    ],
+    "/my-account/orders/[orderId]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/my-account/orders/[orderId].js"
+    ],
     "/shop": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",

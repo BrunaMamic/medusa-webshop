@@ -2,13 +2,15 @@ import Link, { LinkProps } from 'next/link';
 import Image from 'next/image';
 import classNames from '@/utils/classNames';
 import { Tag } from '@/components/ui/Tag';
+import { useCart } from 'medusa-react';
 
 
 export interface ProductProps {
   className?: string;
-  price: number;
   discount?: number;
   discountedPrice?: number;
+  priceEur?: number;
+  priceUsd?: number;
   title: string;
   src: string;
   height: number;
@@ -20,9 +22,10 @@ export interface ProductProps {
 
 export const Product: React.FC<ProductProps> = ({
   className,
-  price,
   discount,
   discountedPrice,
+  priceEur,
+  priceUsd,
   title,
   src,
   height,
@@ -31,12 +34,17 @@ export const Product: React.FC<ProductProps> = ({
   linkTo,
   collection,
 }) => {
+  const {cart} = useCart()
+  console.log(cart);
+
 
   if (discount && !discountedPrice) {
     throw new Error('discountedPrice is required when using discount');
   } else if (discountedPrice && !discount) {
     throw new Error('discount is required when using discountedPrice');
   }
+
+  // const showOurPrice = cart?.region?.currency_code === 'eur';
 
   return ( 
     <Link href={linkTo} className={classNames('group block', className)}>
@@ -91,7 +99,8 @@ export const Product: React.FC<ProductProps> = ({
         <span>{title}</span>
 
         <ul className="relative">
-          <li className={classNames({ 'text-red-700': discount })}>€{price}</li>
+          <li className={classNames({ 'text-red-700': discount })}>{cart?.region?.currency_code === 'eur' ? (priceEur / 100).toFixed(2) :  (priceUsd / 100).toFixed(2)}
+          {cart?.region?.currency_code === 'eur' ? '€' : '$'}</li>
           {discount && (
             <li className="absolute -bottom-6 right-0 text-xs text-gray-400 line-through">
               €{discountedPrice}

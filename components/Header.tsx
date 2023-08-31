@@ -21,22 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   const pathName = usePathname();
   const [isOffcanvasOpen, setIsOffcanvasOpen] = React.useState(false);
   const {cart} = useCart()
-
-
-  // const [selectedRegion, setSelectedRegion] = useState({
-  //   id: cart?.country?.metadata?.id ?? 'defaultId',
-  // });
-
-  // const handleRegionSelection = async (region: { id: string; currency: string }) => {
-  //   setSelectedRegion(region);
-  //   await updateCart.mutateAsync({
-  //     country: {
-  //       ...cart.country,
-  //       metadata: { id: region.id},
-  //     },
-  //   });
-  // };
-  
+  console.log(cart);
 
   return (
     <>
@@ -119,7 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
           <RegionPicker
               colorScheme={colorScheme}
               defaultValue={{ id: 'hr', currency: 'eur' }}
-              
             />
           </li>
           <li>

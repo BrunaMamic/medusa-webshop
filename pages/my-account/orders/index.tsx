@@ -19,7 +19,6 @@ const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 const MyAccountOrdersPage: NextPageWithLayout = () => {
   const [orders, setOrders] = useState([]);
   const account = useAccount();
-  console.log(account?.customer?.id);
   const customerId = account?.customer?.id;
 
   const getAllOrders = () => {
@@ -30,13 +29,13 @@ const MyAccountOrdersPage: NextPageWithLayout = () => {
         offset: 0,
       })
       .then(({ orders }) => {
-        console.log(orders);
         setOrders(orders as any);
       })
       .catch((error) => {
         console.error('Error fetching orders:', error);
       });
   };
+
 
   useEffect(() => {
     getAllOrders();
@@ -89,13 +88,13 @@ const MyAccountOrdersPage: NextPageWithLayout = () => {
             </div>
             <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Tag icon="package">Packing</Tag>
+                <Tag icon="package">{(order.fulfillment_status).toUpperCase()}</Tag>
                 <p className="text-xs2 text-gray-400">
                   Estimate delivery:{' '}
                   <span className="ml-1 text-black">29 June 2023</span>
                 </p>
               </div>
-              <Link href={`/my-account/orders/${order.id}`}>
+              <Link href={`/my-account/orders/${order.display_id}`}>
                 <Button variant="secondary">Check status</Button>
               </Link>
             </div>

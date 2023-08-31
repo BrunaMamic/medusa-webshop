@@ -13,41 +13,54 @@ import { useOrder } from 'medusa-react';
 import { useEffect, useState } from 'react';
 import Medusa from '@medusajs/medusa-js';
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
+import { useAccount } from '@/lib/context/account-context';
+import { usePathname } from 'next/navigation';
+import { Order } from '@medusajs/medusa';
 
 const OrderReturnModal: React.FC = () => {
   const [returnModalStep, setReturnModalStep] = React.useState<
     false | 'form' | 'success'
   >(false);
 
-  const router = useRouter();
-  const [orders, setOrders] = useState<any>();
+  const pathname = usePathname();
+  const { customer } = useAccount();
+  const [order, setOrder] = useState<any>();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
-  const fetchOrder = async (orderId: string) => {
-    const { order } = await medusa.orders.retrieve(orderId);
-    setOrders(order);
-  };
-  console.log(orders);
+  const fetchOrder = async (displayId: string, email: string) => {
+    const response = await medusa.orders.lookupOrder({
+      display_id: parseInt(displayId, 10),
+      email,
+      expand: "billing_address,shipping_address,items,region"
+    });
 
-  useEffect(() => {
-    const orderId = router.query.orderId;
-    if (orderId) {
-      fetchOrder(orderId as string);
+    if (response.order.id) {
+      setOrder(response.order);
     }
-  }, [router]);
+  }
+  useEffect(() => {
+    const orderDisplayId = pathname?.replace("/my-account/orders/", "");
 
-  console.log(selectedItems);
+    console.log(orderDisplayId, customer)
+    if (
+      orderDisplayId &&
+      typeof orderDisplayId === 'string' &&
+      customer?.email
+    ) {
+      fetchOrder(orderDisplayId, customer.email)
+    }
+  }, [pathname]);
 
   const handleCreateReturn = async () => {
     try {
       const returnRequest = {
-        order_id: orders.id,
+        order_id: order.id,
         items: selectedItems.map((selectedItem) => ({
           item_id: selectedItem.id,
           quantity: selectedItem.quantity,
         })),
         // return_shipping: {
-        //   option_id: orders.shipping_method?.[0]?.shipping_option_id,
+        //   option_id: order.shipping_method?.[0]?.shipping_option_id,
         // },
       };
       const { return: createdReturn } = await medusa.returns.create(
@@ -67,7 +80,7 @@ const OrderReturnModal: React.FC = () => {
     } else {
       setSelectedItems([
         ...selectedItems,
-        orders.items.find((item: any) => item.id === itemId),
+        order.items.find((item: any) => item.id === itemId),
       ]);
     }
   };
@@ -89,7 +102,7 @@ const OrderReturnModal: React.FC = () => {
         <Dialog.Trigger asChild>
           <Button
             variant="secondary"
-            isDisabled={orders?.fulfillment_status !== 'shipped'}
+            isDisabled={order?.fulfillment_status !== 'shipped'}
           >
             Return
           </Button>
@@ -101,7 +114,7 @@ const OrderReturnModal: React.FC = () => {
           </Dialog.Title>
           <div className="px-6">
             <ul className="mb-8 [&>li:last-child]:mb-0 [&>li:last-child]:border-b-0 [&>li:last-child]:pb-0 [&>li]:mb-4 [&>li]:border-b [&>li]:border-gray-100 [&>li]:pb-4">
-              {orders?.items?.map((item: any) => (
+              {order?.items?.map((item: any) => (
                 <li key={item.id} className="relative flex justify-between">
                   <input
                     type="checkbox"
@@ -198,31 +211,41 @@ const OrderReturnModal: React.FC = () => {
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
 const MyAccountOrderSinglePage: NextPageWithLayout = () => {
-  const router = useRouter();
-  const [orders, setOrders] = useState<any>();
+  const pathname = usePathname();
+  const [order, setOrder] = useState<Order>();
+  const { customer } = useAccount();
 
-  const fetchOrder = async (orderId: string) => {
-    const { order } = await medusa.orders.retrieve(orderId,  {
-      expand: ['billing_address'], 
+  const fetchOrder = async (displayId: string, email: string) => {
+    const response = await medusa.orders.lookupOrder({
+      display_id: parseInt(displayId, 10),
+      email,
+      expand: "billing_address,shipping_address,items,region"
     });
-    setOrders(order);
-  };
-  console.log(orders);
-  
 
-  useEffect(() => {
-    const orderId = router.query.orderId;
-    if (orderId) {
-      fetchOrder(orderId as string);
+    if (response.order.id) {
+      setOrder(response.order);
     }
-  }, [router]);
+  }
+  useEffect(() => {
+    const orderDisplayId = pathname?.replace("/my-account/orders/", "");
 
+    console.log(orderDisplayId, customer)
+    if (
+      orderDisplayId &&
+      typeof orderDisplayId === 'string' &&
+      customer?.email
+    ) {
+      fetchOrder(orderDisplayId, customer.email)
+    }
+  }, [pathname]);
+
+  console.log(order);
   return (
     <div>
       <Heading className="mb-5 text-primary" size="xl">
         Order:
         <span className="ml-3 text-lg font-light not-italic text-black lg:ml-6">
-          {orders?.display_id}
+          {order?.display_id}
         </span>
       </Heading>
 
@@ -235,17 +258,51 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <ul className="flex flex-wrap gap-y-2 [&>li:first-child]:ml-0 [&>li:last-child]:before:-left-4 [&>li]:relative [&>li]:ml-4 [&>li]:before:absolute [&>li]:before:-right-4 [&>li]:before:top-3.5 [&>li]:before:h-[0.0625rem] [&>li]:before:w-4 [&>li]:before:bg-gray-100 [&>li]:before:content-['']">
             <li className="before:bg-primary">
-              <Tag icon="package" hasBorder={orders?.fulfillment_status === 'not_fulfilled' ? true : false} disabled={orders?.fulfillment_status !== 'not_fulfilled' ? true : false}>
+              <Tag
+                icon="package"
+                // hasBorder={
+                //   order?.fulfillment_status === 'not_fulfilled' ? true : false
+                // }
+                disabled={
+                  order?.fulfillment_status === 'not_fulfilled' ||
+                  order?.fulfillment_status === 'partially_fulfilled'
+                    ? false
+                    : true
+                }
+              >
                 Packing
               </Tag>
             </li>
             <li className='after:absolute after:-left-4 after:top-3.5 after:h-[0.0625rem] after:w-4 after:bg-gray-100 after:content-[""]'>
-              <Tag icon="truck" hasBorder={orders?.fulfillment_status !== 'shipped' ? true : false} disabled={orders?.fulfillment_status === 'shipped' ? true : false}>
+              <Tag
+                icon="truck"
+                // hasBorder={
+                //   order?.fulfillment_status !== 'shipped' ? true : false
+                // }
+                disabled={
+                  order?.fulfillment_status === 'fulfilled' ||
+                  order?.fulfillment_status === 'canceled'
+                    ? false
+                    : true
+                }
+              >
                 Delivering
               </Tag>
             </li>
             <li>
-              <Tag icon="check" hasBorder={orders?.fulfillment_status === 'shipped' ? true : false} disabled={orders?.fulfillment_status !== 'shipped' ? true : false}>
+              <Tag
+                icon="check"
+                // hasBorder={
+                //   order?.fulfillment_status === 'shipped' ? true : false
+                // }
+                disabled={
+                  order?.fulfillment_status === 'shipped' ||
+                  order?.fulfillment_status === 'returned' ||
+                  order?.fulfillment_status === 'partially_returned'
+                    ? false
+                    : true
+                }
+              >
                 Delivered
               </Tag>
             </li>
@@ -259,9 +316,9 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
         <span className="ml-4 mr-auto block text-gray-400">Order date</span>
 
-        {orders?.created_at && (
+        {order?.created_at && (
           <span className="block">
-            {new Date(orders.created_at).toLocaleDateString()}
+            {new Date(order.created_at).toLocaleDateString()}
           </span>
         )}
       </div>
@@ -279,17 +336,17 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
           <ul className="sm:text-end [&>li:last-child]:mb-0 [&>li]:mb-1">
             <li>
-              {orders?.shipping_address?.first_name}{' '}
-              {orders?.shipping_address?.last_name}
+              {order?.shipping_address?.first_name}{' '}
+              {order?.shipping_address?.last_name}
             </li>
-            <li>{orders?.shipping_address?.address_1}</li>
+            <li>{order?.shipping_address?.address_1}</li>
             <li>
-              {orders?.shipping_address?.postal_code}{' '}
-              {orders?.shipping_address?.city}
+              {order?.shipping_address?.postal_code}{' '}
+              {order?.shipping_address?.city}
             </li>
-            <li>{orders?.shipping_address?.country_code}</li>
+            <li>{order?.shipping_address?.country_code}</li>
             {/* opet ovo isto */}
-            <li>{orders?.shipping_address?.phone}</li>
+            <li>{order?.shipping_address?.phone}</li>
           </ul>
         </div>
 
@@ -304,17 +361,22 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
           </div>
 
           <ul className="sm:text-end [&>li:last-child]:mb-0 [&>li]:mb-1">
-            <li>Jovana Jerimic</li>
-            <li>Duvanjs 3</li>
-            <li>10000 Zagreb</li>
-            <li>Croata</li>
-            <li>+385 226 2266</li>
+            <li>
+              {order?.billing_address?.first_name}{' '}
+              {order?.billing_address?.last_name}
+            </li>
+            <li>{order?.billing_address?.address_1}</li>
+            <li>{order?.billing_address?.postal_code}{' '}
+              {order?.billing_address?.city}</li>
+            <li>{order?.billing_address?.country_code}</li>
+
+            <li>{order?.billing_address?.phone}</li>
           </ul>
         </div>
       </div>
 
       <ul className="mb-4 rounded-sm border border-gray-200 p-2 [&>li:last-child]:mb-0 [&>li:last-child]:before:hidden [&>li]:relative [&>li]:mb-4 [&>li]:p-2 [&>li]:before:absolute [&>li]:before:-bottom-2 [&>li]:before:left-0 [&>li]:before:h-[0.0625rem] [&>li]:before:w-full [&>li]:before:bg-gray-100 [&>li]:before:content-['']">
-        {orders?.items?.map((item: any) => (
+        {order?.items?.map((item: any) => (
           <li
             key={item.id}
             className="group relative flex flex-wrap justify-between gap-8 bg-gray-30"
@@ -342,14 +404,12 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
                 </li>
               </ul>
               <div className="flex justify-between gap-4 sm:h-full sm:flex-col">
-                {/* {orders.fulfillment_status === 'returned' ? <Tag variant="informative">{(orders.fulfillment_status).toUpperCase()}</Tag>: <Tag variant="informative">{(orders.status).toUpperCase()}</Tag>} */}
-                {orders.fulfillment_status === 'not_fulfilled' ? (
-                  <Tag variant="informative">{orders.status.toUpperCase()}</Tag>
-                ) : (
-                  <Tag variant="informative">
-                    {orders.fulfillment_status.toUpperCase()}
-                  </Tag>
-                )}
+                {/* {order.fulfillment_status === 'returned' ? <Tag variant="informative">{(order.fulfillment_status).toUpperCase()}</Tag>: <Tag variant="informative">{(order.status).toUpperCase()}</Tag>} */}
+                <Tag variant="informative">
+                  {item.returned_quantity === null
+                    ? 'DELIVERED'
+                    : order.fulfillment_status?.toUpperCase()}
+                </Tag>
 
                 <span className="mt-auto block self-end">
                   {(item.total / 100).toFixed(2)}
@@ -379,8 +439,8 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
             <ul className="ml-4 [&>li:last-child]:mb-0 [&>li]:mb-2">
               <li>
-                {orders?.shipping_address?.first_name}{' '}
-                {orders?.shipping_address?.last_name}
+                {order?.shipping_address?.first_name}{' '}
+                {order?.shipping_address?.last_name}
               </li>
               <li>CASH</li>
             </ul>
@@ -392,8 +452,8 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
             <ul className="flex justify-between gap-20">
               <li className="text-gray-400">Subtotal</li>
               <li>
-                {(orders?.subtotal / 100).toFixed(2)}{' '}
-                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+                {(order?.subtotal! / 100).toFixed(2)}{' '}
+                {order?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>
           </li>
@@ -402,8 +462,8 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
               <li className="text-red-700"> Discount</li>
               <li className="text-red-700">
                 {' '}
-                -{(orders?.discount_total! / 100).toFixed(2)}{' '}
-                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+                -{(order?.discount_total! / 100).toFixed(2)}{' '}
+                {order?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>
           </li>
@@ -411,8 +471,8 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
             <ul className="flex justify-between gap-20">
               <li className="text-gray-400">Shipping</li>
               <li>
-                {(orders?.shipping_total / 100).toFixed(2)}{' '}
-                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+                {(order?.shipping_total! / 100).toFixed(2)}{' '}
+                {order?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>
           </li>
@@ -420,14 +480,14 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
             <ul className="flex justify-between gap-20 text-lg">
               <li>Total</li>
               <li>
-                {(orders?.total / 100).toFixed(2)}
-                {orders?.region?.currency_code === 'eur' ? '€' : '£'}
+                {(order?.total! / 100).toFixed(2)}
+                {order?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>
           </li>
           <li className="text-gray-400">
-            Including {orders?.tax_total}{' '}
-            {orders?.region?.currency_code === 'eur' ? '€' : '£'} tax
+            Including {order?.tax_total}{' '}
+            {order?.region?.currency_code === 'eur' ? '€' : '£'} tax
           </li>
         </ul>
       </div>

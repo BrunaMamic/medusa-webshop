@@ -28,12 +28,12 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
   const [cardAdded, setCardAdded] = React.useState(false);
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
-  const [email, setEmail] = useState()
+  const [email, setEmail] = useState<string>()
   
   const router = useRouter();
 
   const account = useAccount();
-  const { cart } = useStore();
+  const { cart, resetCart } = useStore();
   const { updateCart, setCart } = useCart();
 
   const [shippingOptions, setShippingOptions] = React.useState<
@@ -164,6 +164,8 @@ const CheckoutPage: NextPageWithLayout = () => {
       }
     }
   };
+  console.log(cart);
+  
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
@@ -289,6 +291,7 @@ const CheckoutPage: NextPageWithLayout = () => {
     } catch (error) {
       console.error('Error:', error);
     }
+    resetCart();
   };
 
   return (
@@ -343,7 +346,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   name="email"
                   wrapperClassName="[&>span]:static"
                   defaultValue={cart?.email}
-                  disabled={account.customer}
+                  disabled={!!account.customer}
                   onChange={(e) => setEmail(e.target.value)}
                 />
 
@@ -637,8 +640,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                     </ul>
                   </li>
                   <li>
-                    {cart?.billing_address.first_name}{' '}
-                    {cart?.billing_address.last_name}
+                    {cart?.billing_address?.first_name}{' '}
+                    {cart?.billing_address?.last_name}
                   </li>
                   <li>
                     {cart?.billing_address?.address_1},{' '}

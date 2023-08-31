@@ -35,6 +35,7 @@ const MyAccountPage: NextPageWithLayout = () => {
     control,
     formState: { errors, isValid },
     watch,
+    reset,
   } = useForm();
 
   const [selectedCountry, setSelectedCountry] = React.useState<
@@ -57,6 +58,9 @@ const MyAccountPage: NextPageWithLayout = () => {
     }
   };
 
+  console.log(account?.customer);
+  
+
   const handleAddAddress = handleSubmit(async (data) => {
     
     const newAddress = {
@@ -71,6 +75,7 @@ const MyAccountPage: NextPageWithLayout = () => {
       company: 'Wyman LLC',
       province: 'Georgia',
     };
+    reset()
   
     const response = await account.addAddress(newAddress);
     account.refetchCustomer();
@@ -158,6 +163,8 @@ const MyAccountPage: NextPageWithLayout = () => {
                           message: 'samo slova dopustena',
                         },
                       }}
+                      defaultValue={account?.customer.first_name}
+                      
                       render={({ field }: any) => (
                         <Input
                           type="text"
@@ -165,6 +172,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                           wrapperClassName="flex-1"
                           errorMessage={errors.firstName?.message}
                           {...field}
+                          // placeholder={'ex. Bruna'}
                         />
                       )}
                     />
@@ -180,6 +188,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                           message: 'samo slova dopustena',
                         },
                       }}
+                      defaultValue={account?.customer.last_name}
                       render={({ field }: any) => (
                         <Input
                           type="text"
@@ -219,6 +228,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                         variant="primary"
                         aria-label="Save changes"
                         type="submit"
+                        isDisabled={Object.keys(errors).length > 0}
                       >
                         Save changes
                       </Button>
@@ -456,6 +466,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                   rules={{
                     required: 'unesi',
                   }}
+                
                   render={({ field }: any) => (
                     <Input
                       type="text"

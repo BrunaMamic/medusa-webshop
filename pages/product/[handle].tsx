@@ -35,7 +35,7 @@ const ProductSinglePage = ({ product }: any) => {
   });
   console.log(selectedOptions);
 
-  const [matchingVariants, setMatchingVariants] = useState<string[]>([]);
+  const [matchingVariants, setMatchingVariants] = useState<any>([]);
   const [matchingVariant, setMatchingVariant] = useState<PricedVariant | undefined>(undefined);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
 
@@ -44,8 +44,8 @@ const ProductSinglePage = ({ product }: any) => {
   const store = useStore();
   const addItem = () => {
     store.addItem({
-      variantId: matchingVariant?.id,
-      quantity: selectedQuantity,
+      variantId: matchingVariant?.id as string,
+      quantity: selectedOptions.quantity,
     });
   };
 

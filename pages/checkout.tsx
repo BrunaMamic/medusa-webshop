@@ -10,7 +10,12 @@ import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import { Tag } from '@/components/ui/Tag';
 import { SelectCountry } from '@/components/SelectCountry';
-import {Country, ShippingMethod, ShippingOption, StorePostCartsCartReq} from '@medusajs/medusa';
+import {
+  Country,
+  ShippingMethod,
+  ShippingOption,
+  StorePostCartsCartReq,
+} from '@medusajs/medusa';
 import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
 import { useCart } from 'medusa-react';
@@ -28,8 +33,8 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
   const [cardAdded, setCardAdded] = React.useState(false);
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
-  const [email, setEmail] = useState<string>()
-  
+  const [email, setEmail] = useState<string>();
+
   const router = useRouter();
 
   const account = useAccount();
@@ -73,8 +78,9 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const handleMethodSelection = (optionId: any) => {
     setSelectedMethod(optionId);
-    console.log(selectedMethod);
   };
+
+  console.log(cart);
 
   const addShippingMethod = async () => {
     if (selectedMethod) {
@@ -83,7 +89,7 @@ const CheckoutPage: NextPageWithLayout = () => {
           option_id: selectedMethod,
         })
         .then(({ cart }: any) => {
-          setCart(cart)
+          setCart(cart);
         })
         .catch((error) => {
           console.error('Error', error);
@@ -103,6 +109,10 @@ const CheckoutPage: NextPageWithLayout = () => {
         });
     }
   };
+
+  console.log('Account:', account.customer?.shipping_addresses);
+  // console.log('Cart:', cart?.shipping_address);
+  console.log('Shipping Address:', cart?.shipping_address);
 
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
@@ -164,7 +174,6 @@ const CheckoutPage: NextPageWithLayout = () => {
       }
     }
   };
-  console.log(cart);
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
@@ -769,10 +778,13 @@ const CheckoutPage: NextPageWithLayout = () => {
                   className="min-w-[5.625rem] object-cover sm:w-auto"
                   alt={item.title || ''}
                 />
-
-                {/* <Tag variant="discount" className="absolute bottom-2 right-2">
-        {`-${item.discountPercentage}%`}
-      </Tag> */}
+                {discountApplied ? (
+                  <Tag variant="discount" className="absolute bottom-2 right-2">
+                    {`-${cart.discounts[0].rule.value}%`}
+                  </Tag>
+                ) : (
+                  ''
+                )}
               </Link>
 
               <ul className="relative inline-flex h-full w-full flex-col">
@@ -781,13 +793,13 @@ const CheckoutPage: NextPageWithLayout = () => {
                     <p className="text-xs sm:text-md">{item.title}</p>
                     <ul className="relative items-center gap-2 text-xs sm:mt-0 sm:block sm:self-start">
                       <li className="font-bold text-red-700 sm:text-md">
-                        {(item?.original_total! - item?.raw_discount_total!) /
-                          100}{' '}
-                        {cart?.region?.currency_code === 'eur' ? '€' : '£'}
+                        {discountApplied ? `${(item?.original_total! - item?.raw_discount_total!) / 100}
+                        ${cart?.region?.currency_code === 'eur' ? '€' : '£'}` : `${(item?.original_total!) / 100} ${cart?.region?.currency_code === 'eur' ? '€' : '£'}`}
                       </li>
-                      {/* <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
-              {item.originalPrice}
-            </li> */}
+                      <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
+                        {discountApplied ? `${(item?.original_total!) / 100}
+                        ${cart?.region?.currency_code === 'eur' ? '€' : '£'}` : ''}
+                      </li>
                     </ul>
                   </div>
                 </li>
@@ -838,7 +850,8 @@ const CheckoutPage: NextPageWithLayout = () => {
                   <>
                     <li>Discount</li>
                     <li>
-                      {(cart?.discount_total! / 100).toFixed(2)}{' '}
+                      {cart?.discount_total &&
+                        (cart?.discount_total / 100).toFixed(2)}{' '}
                       {cart?.region?.currency_code === 'eur' ? '€' : '£'}
                     </li>
                   </>

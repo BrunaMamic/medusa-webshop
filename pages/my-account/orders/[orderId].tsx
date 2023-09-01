@@ -9,13 +9,14 @@ import { Icon } from '@/components/ui/Icon';
 import { Heading } from '@/components/ui/Heading';
 import * as Dialog from '@/components/ui/Dialog';
 import { useRouter } from 'next/router';
-import { useOrder } from 'medusa-react';
+import { useCart, useOrder } from 'medusa-react';
 import { useEffect, useState } from 'react';
 import Medusa from '@medusajs/medusa-js';
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import { useAccount } from '@/lib/context/account-context';
 import { usePathname } from 'next/navigation';
 import { Order } from '@medusajs/medusa';
+import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
 
 const OrderReturnModal: React.FC = () => {
   const [returnModalStep, setReturnModalStep] = React.useState<
@@ -31,23 +32,23 @@ const OrderReturnModal: React.FC = () => {
     const response = await medusa.orders.lookupOrder({
       display_id: parseInt(displayId, 10),
       email,
-      expand: "billing_address,shipping_address,items,region"
+      expand: 'billing_address,shipping_address,items,region',
     });
 
     if (response.order.id) {
       setOrder(response.order);
     }
-  }
+  };
   useEffect(() => {
-    const orderDisplayId = pathname?.replace("/my-account/orders/", "");
+    const orderDisplayId = pathname?.replace('/my-account/orders/', '');
 
-    console.log(orderDisplayId, customer)
+    console.log(orderDisplayId, customer);
     if (
       orderDisplayId &&
       typeof orderDisplayId === 'string' &&
       customer?.email
     ) {
-      fetchOrder(orderDisplayId, customer.email)
+      fetchOrder(orderDisplayId, customer.email);
     }
   }, [pathname]);
 
@@ -214,28 +215,29 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
   const pathname = usePathname();
   const [order, setOrder] = useState<Order>();
   const { customer } = useAccount();
+  const { cart } = useCart();
 
   const fetchOrder = async (displayId: string, email: string) => {
     const response = await medusa.orders.lookupOrder({
       display_id: parseInt(displayId, 10),
       email,
-      expand: "billing_address,shipping_address,items,region"
+      expand: 'billing_address,shipping_address,items,region',
     });
 
     if (response.order.id) {
       setOrder(response.order);
     }
-  }
+  };
   useEffect(() => {
-    const orderDisplayId = pathname?.replace("/my-account/orders/", "");
+    const orderDisplayId = pathname?.replace('/my-account/orders/', '');
 
-    console.log(orderDisplayId, customer)
+    console.log(orderDisplayId, customer);
     if (
       orderDisplayId &&
       typeof orderDisplayId === 'string' &&
       customer?.email
     ) {
-      fetchOrder(orderDisplayId, customer.email)
+      fetchOrder(orderDisplayId, customer.email);
     }
   }, [pathname]);
 
@@ -366,9 +368,18 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
               {order?.billing_address?.last_name}
             </li>
             <li>{order?.billing_address?.address_1}</li>
-            <li>{order?.billing_address?.postal_code}{' '}
-              {order?.billing_address?.city}</li>
-            <li>{order?.billing_address?.country_code}</li>
+            <li>
+              {order?.billing_address?.postal_code}{' '}
+              {order?.billing_address?.city}
+            </li>
+            <li>
+              {
+                cart?.region?.countries.find(
+                  (country: any) =>
+                    country?.iso_2 === order?.billing_address?.country_code
+                )?.display_name
+              }
+            </li>
 
             <li>{order?.billing_address?.phone}</li>
           </ul>
@@ -413,7 +424,7 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
 
                 <span className="mt-auto block self-end">
                   {(item.total / 100).toFixed(2)}
-                  {'€'}
+                  {order.region?.currency_code === 'eur' ? '€' : '$'}
                 </span>
               </div>
             </div>
@@ -481,6 +492,7 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
               <li>Total</li>
               <li>
                 {(order?.total! / 100).toFixed(2)}
+
                 {order?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>

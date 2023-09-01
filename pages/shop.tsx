@@ -99,7 +99,7 @@ const ShopPage: NextPageWithLayout = () => {
 
   useEffect(() => {
     applySorting(selectedFilter);
-  }, [selectedFilter]);
+  }, [selectedFilter, products]);
 
   return (
     <>

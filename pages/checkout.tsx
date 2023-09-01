@@ -165,7 +165,6 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
   console.log(cart);
-  
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];

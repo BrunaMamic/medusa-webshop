@@ -121,7 +121,7 @@ const ShopPage: NextPageWithLayout = () => {
           }
           const calculatedPrice = getPriceByCurrency(
             product.variants[0].prices,
-            cart?.region?.currency_code || ''
+            cart?.region?.currency_code || '', 1
           );
 
             return (

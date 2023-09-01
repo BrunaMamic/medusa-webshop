@@ -13,48 +13,50 @@ import { useCart, useProducts } from 'medusa-react';
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/context/store-context';
 import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
+import { PricedVariant } from '@medusajs/medusa/dist/types/pricing';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
   // console.log(router.query);
   // @ts-ignore
   const { products, isLoading } = useProducts({ handle: router.query.handle });
+  console.log(products);
   
+
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
 
   const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   const [selectedOptions, setSelectedOptions] = useState({
-    color: '',
+    color: uniqueColors[0] || '',
     size: '',
     quantity: selectedQuantity,
   });
   console.log(selectedOptions);
 
   const [matchingVariants, setMatchingVariants] = useState<string[]>([]);
-  const [matchingVariant, setMatchingVariant] = useState<string[]>([]);
+  const [matchingVariant, setMatchingVariant] = useState<PricedVariant | undefined>(undefined);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
 
   //CART
-  const {cart} = useCart()
+  const { cart } = useCart();
   const store = useStore();
   const addItem = () => {
     store.addItem({
       variantId: matchingVariant?.id,
-      quantity: selectedOptions.quantity,
+      quantity: selectedQuantity,
     });
   };
-  
+
   //PRODUCT DATA
 
   const cartCurrencyCode = cart?.region?.currency_code || '';
 
   const calculatedPrice = getPriceByCurrency(
-  products?.[0].variants[0].prices, 
-  cartCurrencyCode
-);
-
+    products?.[0].variants[0].prices,
+    cartCurrencyCode, selectedOptions.quantity
+  );
 
   useEffect(() => {
     const colors = Array.from(
@@ -67,6 +69,10 @@ const ProductSinglePage = ({ product }: any) => {
     setUniqueColors(colors);
 
     if (colors.length > 0) {
+      setSelectedOptions({
+        ...selectedOptions,
+        color: colors[0],
+      });
       handleColorChange(colors[0]);
     }
 
@@ -149,9 +155,7 @@ const ProductSinglePage = ({ product }: any) => {
           -50%
         </Tag> */}
 
-        <p className="text-xl text-black-900">
-          {calculatedPrice}
-        </p>
+        <p className="text-black-900 text-xl">{calculatedPrice}</p>
         {/* ovo ako je snizeno koristi */}
         {/* <p className="mt-2 text-lg text-gray-400 line-through">
           {(products[0].variants[0]?.prices[0].amount / 100).toFixed(2)}
@@ -166,7 +170,7 @@ const ProductSinglePage = ({ product }: any) => {
           {uniqueColors.map((colorValue: string, colorIndex: number) => (
             <button
               key={colorIndex}
-              className={`mr-3 cursor-pointer border border-gray-300 px-3 py-2 ${
+              className={`mr-3 cursor-pointer border border-gray-200 px-3 py-2 ${
                 colorValue === selectedOptions.color ? 'bg-gray-50' : ''
               }`}
               // "flex items-center gap-2"
@@ -201,11 +205,11 @@ const ProductSinglePage = ({ product }: any) => {
             return (
               <button
                 key={sizeIndex}
-                className={`mr-3 cursor-pointer border border-gray-300 px-3 py-2 ${
+                className={`m-2 cursor-pointer border border-gray-200 px-3 py-2 ${
                   sizeValue === selectedOptions.size
-                    ? 'bg-gray-100'
+                    ? 'bg-gray-100 font-black text-primary'
                     : isAvailableForSelectedColor
-                    ? ''
+                    ? 'transition-all hover:border-primary hover:font-black hover:text-primary'
                     : 'pointer-events-none text-gray-100'
                 }`}
                 onClick={() => handleSizeChange(sizeValue)}
@@ -215,6 +219,7 @@ const ProductSinglePage = ({ product }: any) => {
             );
           })}
         </div>
+
         <p className="mb-2">Quantity</p>
 
         <QuantityInput
@@ -230,18 +235,8 @@ const ProductSinglePage = ({ product }: any) => {
           className="mb-8"
         />
 
-        <Link href="/cart">
-          <Button size="lg">View cart</Button>
-        </Link>
-
-        <Button size="lg" className="m-4">
-          <button
-            className={`${isAddToCartEnabled ? ' ' : 'cursor-not-allowed'} `}
-            onClick={() => addItem()}
-            disabled={!isAddToCartEnabled}
-          >
+        <Button size="lg" className="m-4 w-full" onPress={() => addItem()} isDisabled={!isAddToCartEnabled}>
             ADD
-          </button>
         </Button>
 
         <p className="text-gray-300">Estimate delivery 2-3 days</p>
@@ -255,4 +250,3 @@ ProductSinglePage.getLayout = function getLayout(page: React.ReactElement) {
 };
 
 export default ProductSinglePage;
-

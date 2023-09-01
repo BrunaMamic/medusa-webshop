@@ -9,8 +9,6 @@ export interface ProductProps {
   className?: string;
   discount?: number;
   discountedPrice?: number;
-  priceEur?: number;
-  priceUsd?: number;
   title: string;
   src: string;
   height: number;
@@ -18,14 +16,13 @@ export interface ProductProps {
   alt: string;
   linkTo: LinkProps['href'];
   collection: string;
+  calculatedPrice: string;
 }
 
 export const Product: React.FC<ProductProps> = ({
   className,
   discount,
   discountedPrice,
-  priceEur,
-  priceUsd,
   title,
   src,
   height,
@@ -33,6 +30,7 @@ export const Product: React.FC<ProductProps> = ({
   alt,
   linkTo,
   collection,
+  calculatedPrice,
 }) => {
   const {cart} = useCart()
   console.log(cart);
@@ -99,8 +97,9 @@ export const Product: React.FC<ProductProps> = ({
         <span>{title}</span>
 
         <ul className="relative">
-          <li className={classNames({ 'text-red-700': discount })}>{cart?.region?.currency_code === 'eur' ? (priceEur / 100).toFixed(2) :  (priceUsd / 100).toFixed(2)}
-          {cart?.region?.currency_code === 'eur' ? '€' : '$'}</li>
+          <li className={classNames({ 'text-red-700': discount })}>
+          {calculatedPrice}
+          </li> 
           {discount && (
             <li className="absolute -bottom-6 right-0 text-xs text-gray-400 line-through">
               €{discountedPrice}

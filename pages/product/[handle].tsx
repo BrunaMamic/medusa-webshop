@@ -9,16 +9,16 @@ import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { Heading } from '@/components/ui/Heading';
 import { QuantityInput } from '@/components/ui/QuantityInput';
-import { useProducts } from 'medusa-react';
+import { useCart, useProducts } from 'medusa-react';
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/context/store-context';
+import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
   // console.log(router.query);
   // @ts-ignore
   const { products, isLoading } = useProducts({ handle: router.query.handle });
-  console.log(products);
   
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
@@ -36,9 +36,8 @@ const ProductSinglePage = ({ product }: any) => {
   const [matchingVariant, setMatchingVariant] = useState<string[]>([]);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
 
-  console.log(matchingVariants);
-
   //CART
+  const {cart} = useCart()
   const store = useStore();
   const addItem = () => {
     store.addItem({
@@ -46,7 +45,16 @@ const ProductSinglePage = ({ product }: any) => {
       quantity: selectedOptions.quantity,
     });
   };
+  
   //PRODUCT DATA
+
+  const cartCurrencyCode = cart?.region?.currency_code || '';
+
+  const calculatedPrice = getPriceByCurrency(
+  products?.[0].variants[0].prices, 
+  cartCurrencyCode
+);
+
 
   useEffect(() => {
     const colors = Array.from(
@@ -118,8 +126,6 @@ const ProductSinglePage = ({ product }: any) => {
     return matchingVariant;
   };
 
-  console.log(matchingVariants);
-
   return products?.[0] ? (
     <main className="group flex grid-cols-12 flex-col-reverse px-4 py-8 sm:px-24 lg:grid lg:pb-36 lg:pl-0 lg:pt-15 xl:pl-24">
       <div className="col-span-6 mt-20 lg:mt-20">
@@ -139,17 +145,17 @@ const ProductSinglePage = ({ product }: any) => {
           {products[0].title}
         </Heading>
 
-        <Tag variant="discount" className="mb-4">
+        {/* <Tag variant="discount" className="mb-4">
           -50%
-        </Tag>
+        </Tag> */}
 
-        <p className="text-xl text-red-900">
-          {(products[0].variants[0]?.prices[0].amount / 100).toFixed(2)}
+        <p className="text-xl text-black-900">
+          {calculatedPrice}
         </p>
-
-        <p className="mt-2 text-lg text-gray-400 line-through">
+        {/* ovo ako je snizeno koristi */}
+        {/* <p className="mt-2 text-lg text-gray-400 line-through">
           {(products[0].variants[0]?.prices[0].amount / 100).toFixed(2)}
-        </p>
+        </p> */}
 
         <ul className="my-12 [&>li:last-child]:mb-0 [&>li]:mb-3.5">
           {products[0].description}
@@ -249,6 +255,4 @@ ProductSinglePage.getLayout = function getLayout(page: React.ReactElement) {
 };
 
 export default ProductSinglePage;
-function useCart(): { cart: any; createCart: any } {
-  throw new Error('Function not implemented.');
-}
+

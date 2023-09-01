@@ -25,7 +25,10 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
     selectedValue?.id ?? defaultValue?.id ?? ''
   );
 
-  const [selectedCountryName, setSelectedCountryName] = useState('');
+  const [selectedCountryName, setSelectedCountryName] = useState<string>(
+    allCountries?.[0]?.iso_2 ?? ''
+  );
+  
 
   useEffect(() => {
     const storedSelectedCountryName = localStorage.getItem('selectedCountryName');
@@ -50,7 +53,7 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
           >
             {/* {selectedValue?.id.toUpperCase() ?? defaultValue?.id.toUpperCase()} */}
             {/* {selectedCountry?.iso_2 ?? defaultValue?.id.toUpperCase()} */}
-            {selectedCountryName}
+            {selectedCountryName ?? defaultValue?.id} 
 
           </span>
           <span className="pl-2">

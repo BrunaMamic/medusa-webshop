@@ -346,7 +346,14 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
               {order?.shipping_address?.postal_code}{' '}
               {order?.shipping_address?.city}
             </li>
-            <li>{order?.shipping_address?.country_code}</li>
+            <li>
+              {
+                cart?.region?.countries.find(
+                  (country: any) =>
+                    country?.iso_2 === order?.shipping_address?.country_code
+                )?.display_name
+              }
+            </li>
             {/* opet ovo isto */}
             <li>{order?.shipping_address?.phone}</li>
           </ul>

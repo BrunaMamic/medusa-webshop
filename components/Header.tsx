@@ -8,6 +8,7 @@ import { Icon, BadgeIcon } from '@/components/ui/Icon';
 import { useCart } from 'medusa-react';
 import { RegionPicker } from './ui/RegionPicker';
 import { useState } from 'react';
+import { useAccount } from '@/lib/context/account-context';
 
 export interface HeaderProps {
   isAbsolute?: boolean;
@@ -21,7 +22,6 @@ export const Header: React.FC<HeaderProps> = ({
   const pathName = usePathname();
   const [isOffcanvasOpen, setIsOffcanvasOpen] = React.useState(false);
   const {cart} = useCart()
-  console.log(cart);
 
   return (
     <>
@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
           </li>
           <li>
             <Link href="/my-account/login">
-              <BadgeIcon icon="user" value={cart?.items.length!} />
+              <BadgeIcon icon="user" value={''} />
             </Link>
           </li>
           <li>

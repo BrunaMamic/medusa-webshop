@@ -13,8 +13,9 @@ import { useState } from 'react';
 import { sortBy } from 'lodash';
 
 import { useForm, Controller } from 'react-hook-form';
-import { Country } from '@medusajs/medusa';
+import { Country, Region } from '@medusajs/medusa';
 import { useStore } from '@/lib/context/store-context';
+import { useRegions } from 'medusa-react';
 
 const MyAccountPage: NextPageWithLayout = () => {
   const [address, setAddress] = useState();
@@ -29,6 +30,11 @@ const MyAccountPage: NextPageWithLayout = () => {
 
   const account = useAccount();
   const { cart } = useStore();
+  const regions = useRegions();
+
+  const allCountries = regions.regions?.flatMap((region) => region.countries);
+  console.log(allCountries);
+  
 
   const {
     handleSubmit,
@@ -41,7 +47,6 @@ const MyAccountPage: NextPageWithLayout = () => {
   const [selectedCountry, setSelectedCountry] = React.useState<
     Country | undefined
   >();
-
   const handleCountryChange = (country: Country) => {
     setSelectedCountry(country);
   };
@@ -59,10 +64,8 @@ const MyAccountPage: NextPageWithLayout = () => {
   };
 
   console.log(account?.customer);
-  
 
   const handleAddAddress = handleSubmit(async (data) => {
-    
     const newAddress = {
       first_name: account.customer?.first_name,
       last_name: account.customer?.last_name,
@@ -75,8 +78,8 @@ const MyAccountPage: NextPageWithLayout = () => {
       company: 'Wyman LLC',
       province: 'Georgia',
     };
-    reset()
-  
+    reset();
+
     const response = await account.addAddress(newAddress);
     account.refetchCustomer();
   });
@@ -97,11 +100,11 @@ const MyAccountPage: NextPageWithLayout = () => {
       updatedAddress.city || existingAddress?.city,
       updatedAddress.postal_code || existingAddress?.postal_code
     );
-    
+
     setUpdatedAddress1(undefined);
     setUpdatedAddress2('');
     setUpdatedPostalCode('');
-    setUpdatedCity('')
+    setUpdatedCity('');
   };
 
   const handleDeleteAddress = async (addressId: any) => {
@@ -164,7 +167,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                         },
                       }}
                       defaultValue={account?.customer.first_name}
-                      
                       render={({ field }: any) => (
                         <Input
                           type="text"
@@ -286,13 +288,12 @@ const MyAccountPage: NextPageWithLayout = () => {
                           Country
                         </li>
                         <li className="text-sm text-black">
-                          {
-                            cart?.region?.countries.find(
-                              (country: any) =>
-                                country?.iso_2 === address?.country_code
-                            )?.display_name
-                          }
+                          {allCountries?.find(
+                            (country) =>
+                              country?.iso_2 === address.country_code
+                          )?.display_name}
                         </li>
+                        
                       </ul>
 
                       <ul className="flex-1">
@@ -359,7 +360,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                       </Dialog.Trigger>
                       <Dialog.Overlay />
 
-                      
                       <Dialog.Content>
                         <Dialog.Title>Change address</Dialog.Title>
 
@@ -459,6 +459,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                   selectedCountry={selectedCountry}
                   onCountryChange={handleCountryChange}
                 />
+
                 <Controller
                   name="address"
                   control={control}
@@ -466,7 +467,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                   rules={{
                     required: 'unesi',
                   }}
-                
                   render={({ field }: any) => (
                     <Input
                       type="text"

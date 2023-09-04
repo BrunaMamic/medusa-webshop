@@ -5,6 +5,7 @@ import { baseClasses, labelBaseClasses } from '@/components/Input';
 import { Icon } from '@/components/ui/Icon';
 import { useStore } from '@/lib/context/store-context';
 import { Country } from '@medusajs/medusa';
+import { useRegions } from 'medusa-react';
 export interface SelectCountryProps {
   errorMessage?: string;
   disabled?: boolean;
@@ -19,6 +20,9 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
   onCountryChange,
 }) => {
   const { cart } = useStore();
+  const regions = useRegions();
+  const allCountries = regions.regions?.flatMap((region) => region.countries);
+
   return (
     <div className="dropdown-full-width">
       <Dropdown.Root>
@@ -55,16 +59,15 @@ export const SelectCountry: React.FC<SelectCountryProps> = ({
           sideOffset={0}
           align="end"
         >
-          {cart?.region.countries.map((country:any) => {          
-            return (
-              <Dropdown.Item
-                className="dropdown-item font-black italic text-primary"
-                onSelect={() => onCountryChange(country)}
-              >
-                {country.display_name}
-              </Dropdown.Item>
-            );
-          })}
+          {allCountries?.map((country: any) => (
+            <Dropdown.Item
+              key={country.id}
+              className="dropdown-item font-black italic text-primary"
+              onSelect={() => onCountryChange(country)}
+            >
+              {country.display_name}
+            </Dropdown.Item>
+          ))}
         </Dropdown.Content>
       </Dropdown.Root>
       {Boolean(errorMessage) && (

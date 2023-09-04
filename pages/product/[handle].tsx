@@ -1,52 +1,44 @@
 import * as React from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
-
-import type { NextPageWithLayout } from '@/pages/_app';
 import DefaultLayout from '@/layouts/DefaultLayout';
 import { Button } from '@/components/ui/Button';
-import { Tag } from '@/components/ui/Tag';
 import { Heading } from '@/components/ui/Heading';
 import { QuantityInput } from '@/components/ui/QuantityInput';
 import { useCart, useProducts } from 'medusa-react';
-import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/context/store-context';
 import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
-import { PricedVariant } from '@medusajs/medusa/dist/types/pricing';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
-  // console.log(router.query);
-  // @ts-ignore
-  const { products, isLoading } = useProducts({ handle: router.query.handle });
-  console.log(products);
-  
-
+  const { products, isLoading } = useProducts({
+    handle: router.query.handle as string,
+  });
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
-
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
-
   const [selectedOptions, setSelectedOptions] = useState({
     color: uniqueColors[0] || '',
     size: '',
-    quantity: selectedQuantity,
+    quantity: 1,
   });
-  console.log(selectedOptions);
-
   const [matchingVariants, setMatchingVariants] = useState<any>([]);
-  const [matchingVariant, setMatchingVariant] = useState<PricedVariant | undefined>(undefined);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
 
   //CART
   const { cart } = useCart();
   const store = useStore();
   const addItem = () => {
-    store.addItem({
-      variantId: matchingVariant?.id as string,
-      quantity: selectedOptions.quantity,
-    });
+    const matchingVariant = getVariant(
+      selectedOptions.color,
+      selectedOptions.size
+    );
+    if (matchingVariant?.id) {
+      store.addItem({
+        variantId: matchingVariant?.id as string,
+        quantity: selectedOptions.quantity,
+      });
+    }
   };
 
   //PRODUCT DATA
@@ -55,7 +47,8 @@ const ProductSinglePage = ({ product }: any) => {
 
   const calculatedPrice = getPriceByCurrency(
     products?.[0].variants[0].prices,
-    cartCurrencyCode, selectedOptions.quantity
+    cartCurrencyCode,
+    selectedOptions.quantity
   );
 
   useEffect(() => {
@@ -84,7 +77,7 @@ const ProductSinglePage = ({ product }: any) => {
       )
     );
     setUniqueSize(sizes);
-  }, [products?.[0]?.options]);
+  }, [products]);
 
   const handleColorChange = (colorValue: string) => {
     const updatedOptions = {
@@ -104,10 +97,6 @@ const ProductSinglePage = ({ product }: any) => {
         );
       });
     });
-    const matchingVariant = getVariant(colorValue, selectedOptions.size);
-    setMatchingVariant(matchingVariant);
-    console.log(matchingVariant);
-
     setMatchingVariants(matchingVariants);
   };
 
@@ -122,14 +111,12 @@ const ProductSinglePage = ({ product }: any) => {
   };
 
   const getVariant = (colorValue: string, sizeValue: string) => {
-    const matchingVariant = products?.[0].variants.find((x: any) => {
+    return products?.[0].variants.find((x: any) => {
       const colorOption = x.options.find((op: any) => op.value === colorValue);
       const sizeOption = x.options.find((op: any) => op.value === sizeValue);
 
       return colorOption && sizeOption;
     });
-
-    return matchingVariant;
   };
 
   return products?.[0] ? (
@@ -235,8 +222,13 @@ const ProductSinglePage = ({ product }: any) => {
           className="mb-8"
         />
 
-        <Button size="lg" className="m-4 w-full" onPress={() => addItem()} isDisabled={!isAddToCartEnabled}>
-            ADD
+        <Button
+          size="lg"
+          className="m-4 w-full"
+          onPress={() => addItem()}
+          isDisabled={!isAddToCartEnabled}
+        >
+          ADD
         </Button>
 
         <p className="text-gray-300">Estimate delivery 2-3 days</p>

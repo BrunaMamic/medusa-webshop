@@ -18,7 +18,7 @@ import {
 } from '@medusajs/medusa';
 import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
-import { useCart } from 'medusa-react';
+import { useCart, useRegions } from 'medusa-react';
 import { AddressPayload } from '@medusajs/types';
 import { useEffect, useState } from 'react';
 
@@ -38,7 +38,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   const router = useRouter();
 
   const account = useAccount();
-  const { cart, resetCart } = useStore();
+  const { cart, resetCart, countryCode } = useStore();
   const { updateCart, setCart } = useCart();
 
   const [shippingOptions, setShippingOptions] = React.useState<
@@ -49,6 +49,13 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
   const [invalidDiscount, setInvalidDiscount] = useState(false);
+
+  const regions = useRegions();
+  const allCountries = regions.regions?.flatMap((region) => region.countries);
+  const filteredCountries = allCountries?.filter(
+    (country) => country.region_id === cart?.region_id
+  );
+  console.log(filteredCountries);
 
   const handleApplyDiscount = async () => {
     try {
@@ -80,8 +87,6 @@ const CheckoutPage: NextPageWithLayout = () => {
     setSelectedMethod(optionId);
   };
 
-  console.log(cart);
-
   const addShippingMethod = async () => {
     if (selectedMethod) {
       await medusa.carts
@@ -110,10 +115,6 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  console.log('Account:', account.customer?.shipping_addresses);
-  // console.log('Cart:', cart?.shipping_address);
-  console.log('Shipping Address:', cart?.shipping_address);
-
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
 
@@ -125,7 +126,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   };
 
   useEffect(() => {
-    if (step === 2 && cart?.shipping_address === null) {
+    if (step === 2 && !cart?.shipping_address?.country_code) {
       copyShippingAddressToCart();
       copyBillingAddress();
     }
@@ -177,7 +178,9 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
-    const shippingAddress = account.customer?.shipping_addresses[0];
+    const shippingAddress = account.customer?.shipping_addresses?.filter(
+      (shipping_address) => shipping_address.country_code === countryCode
+    )?.[0];
     if (shippingAddress) {
       const {
         company,
@@ -215,7 +218,18 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const updateCountry = async (payload: any) => {
+    const selectedCountry = allCountries?.find(
+      (country) => country.iso_2 === payload
+    );
+
+    if (selectedCountry && selectedCountry.region_id !== cart?.region_id) {
+      setErrorMessage('Selected country does not match the region.');
+      return;
+    }
+    setErrorMessage('');
     await updateCart
       .mutateAsync({
         shipping_address: {
@@ -287,11 +301,6 @@ const CheckoutPage: NextPageWithLayout = () => {
       const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
       const { type, data } = await medusa.carts.complete(cart?.id || '');
-
-      console.log(type, data);
-      console.log('added');
-      console.log(data);
-
       router.push({
         pathname: '/order-confirmation',
         query: { id: data.id },
@@ -433,6 +442,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                       updateCountry(country.iso_2);
                     }}
                   />
+                  {errorMessage && (
+                    <span className="text-red-700">{errorMessage}</span>
+                  )}
+
                   <div className="flex gap-x-4 lg:gap-x-12">
                     <Input
                       type="text"
@@ -780,7 +793,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                 />
                 {discountApplied ? (
                   <Tag variant="discount" className="absolute bottom-2 right-2">
-                    {`-${cart.discounts[0].rule.value}%`}
+                    {`-${cart.discounts[0]?.rule.value}%`}
                   </Tag>
                 ) : (
                   ''
@@ -793,12 +806,22 @@ const CheckoutPage: NextPageWithLayout = () => {
                     <p className="text-xs sm:text-md">{item.title}</p>
                     <ul className="relative items-center gap-2 text-xs sm:mt-0 sm:block sm:self-start">
                       <li className="font-bold text-red-700 sm:text-md">
-                        {discountApplied ? `${(item?.original_total! - item?.raw_discount_total!) / 100}
-                        ${cart?.region?.currency_code === 'eur' ? '€' : '£'}` : `${(item?.original_total!) / 100} ${cart?.region?.currency_code === 'eur' ? '€' : '£'}`}
+                        {discountApplied
+                          ? `${
+                              (item?.original_total! -
+                                item?.raw_discount_total!) /
+                              100
+                            }
+                        ${cart?.region?.currency_code === 'eur' ? '€' : '£'}`
+                          : `${item?.original_total! / 100} ${
+                              cart?.region?.currency_code === 'eur' ? '€' : '£'
+                            }`}
                       </li>
                       <li className="absolute -bottom-6 right-0 font-light text-gray-400 line-through sm:text-sm">
-                        {discountApplied ? `${(item?.original_total!) / 100}
-                        ${cart?.region?.currency_code === 'eur' ? '€' : '£'}` : ''}
+                        {discountApplied
+                          ? `${item?.original_total! / 100}
+                        ${cart?.region?.currency_code === 'eur' ? '€' : '£'}`
+                          : ''}
                       </li>
                     </ul>
                   </div>

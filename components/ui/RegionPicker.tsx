@@ -1,7 +1,8 @@
+
 import { useStore } from '@/lib/context/store-context';
 import classNames from '@/utils/classNames';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
-import { useRegions } from 'medusa-react';
+import { useCart, useRegions } from 'medusa-react';
 import { useEffect, useState } from 'react';
 
 export interface RegionPickerProps extends React.PropsWithChildren {
@@ -17,7 +18,8 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
   defaultValue,
   selectedValue,
 }) => {
-  const { cart, setRegion } = useStore();
+  const { cart, setRegion, resetCart } = useStore();
+  const {createCart, updateCart} = useCart()
   const regions = useRegions();
   const allCountries = regions.regions?.flatMap((region) => region.countries);
 
@@ -28,18 +30,17 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
   const [selectedCountryName, setSelectedCountryName] = useState<string>(
     allCountries?.[0]?.iso_2 ?? ''
   );
-  
-
   useEffect(() => {
-    const storedSelectedCountryName = localStorage.getItem('selectedCountryName');
-  
-    if (storedSelectedCountryName) {
-      setSelectedCountryName(storedSelectedCountryName);
-    }
-  }, []);
+    const region = localStorage.getItem('medusa_region');
 
-  console.log(cart);
-  
+    if (region) {
+      const { countryCode } = JSON.parse(region);
+      setSelectedCountryName(countryCode);
+    } else {
+      setSelectedCountryName(allCountries?.[0]?.iso_2 ?? '');
+    }
+  }, [regions]);
+
   return (
     <Dropdown.Root>
       <Dropdown.Trigger asChild>
@@ -51,17 +52,11 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
               className
             )}
           >
-            {/* {selectedValue?.id.toUpperCase() ?? defaultValue?.id.toUpperCase()} */}
-            {/* {selectedCountry?.iso_2 ?? defaultValue?.id.toUpperCase()} */}
-            {selectedCountryName ?? defaultValue?.id} 
-
+            {selectedCountryName ?? defaultValue?.id}
           </span>
           <span className="pl-2">
-            {/* {selectedValue?.currency.toUpperCase() ??
-              defaultValue?.currency.toUpperCase()} */}
             {cart?.region?.currency_code.toUpperCase() ??
               defaultValue?.currency.toUpperCase()}
-              
           </span>
         </button>
       </Dropdown.Trigger>
@@ -79,8 +74,6 @@ export const RegionPicker: React.FC<RegionPickerProps> = ({
             onClick={() => {
               setSelectedRegion(country.id);
               setRegion(country.region_id, country.iso_2);
-
-              localStorage.setItem('selectedCountryName', country.iso_2);
               setSelectedCountryName(country.iso_2);
             }}
           >

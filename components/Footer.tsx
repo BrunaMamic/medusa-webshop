@@ -24,7 +24,7 @@ export const Footer = () => {
             <Input
               type="email"
               label="Your email"
-              wrapperClassName="flex-1 mb-5 md:mb-0 lg:mb-0 [&>label]:text-primary"
+              wrapperClassName="flex-1 mb-5 md:mb-0 lg:mb-0"
               className="border-primary"
             />
 

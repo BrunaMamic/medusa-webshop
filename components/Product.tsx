@@ -33,8 +33,6 @@ export const Product: React.FC<ProductProps> = ({
   calculatedPrice,
 }) => {
   const {cart} = useCart()
-  console.log(cart);
-
 
   if (discount && !discountedPrice) {
     throw new Error('discountedPrice is required when using discount');

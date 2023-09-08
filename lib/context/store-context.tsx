@@ -30,6 +30,7 @@ interface StoreContext {
   deleteItem: (lineId: string) => void
   resetCart: () => void
   cart: Omit<Cart, 'refundable_amount' | 'refunded_total'> | undefined;
+  addEmail: (email: string) => void
 }
 
 const StoreContext = React.createContext<StoreContext | null>(null)
@@ -295,6 +296,20 @@ export const StoreProvider = ({ children }: StoreProps) => {
     )
   }
 
+  const addEmail = (email: string) => {
+    updateCart.mutate({
+      email,
+    }, {
+      onSuccess: ({ cart }) => {
+        setCart(cart)
+        storeCart(cart.id)
+      },
+      onError: (error) => {
+        handleError(error)
+      },
+    })
+  }
+
   return (
     <StoreContext.Provider
       value={{
@@ -305,6 +320,7 @@ export const StoreProvider = ({ children }: StoreProps) => {
         updateItem,
         resetCart,
         cart,
+        addEmail,
       }}
     >
       {children}

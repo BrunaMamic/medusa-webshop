@@ -26,6 +26,7 @@ const OrderReturnModal: React.FC = () => {
   const pathname = usePathname();
   const { customer } = useAccount();
   const [order, setOrder] = useState<any>();
+
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const fetchOrder = async (displayId: string, email: string) => {
@@ -41,8 +42,6 @@ const OrderReturnModal: React.FC = () => {
   };
   useEffect(() => {
     const orderDisplayId = pathname?.replace('/my-account/orders/', '');
-
-    console.log(orderDisplayId, customer);
     if (
       orderDisplayId &&
       typeof orderDisplayId === 'string' &&
@@ -67,9 +66,6 @@ const OrderReturnModal: React.FC = () => {
       const { return: createdReturn } = await medusa.returns.create(
         returnRequest
       );
-
-      console.log('Return id:', createdReturn.id);
-      console.log(createdReturn);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -228,10 +224,10 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
       setOrder(response.order);
     }
   };
+  
   useEffect(() => {
     const orderDisplayId = pathname?.replace('/my-account/orders/', '');
 
-    console.log(orderDisplayId, customer);
     if (
       orderDisplayId &&
       typeof orderDisplayId === 'string' &&
@@ -239,9 +235,8 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
     ) {
       fetchOrder(orderDisplayId, customer.email);
     }
-  }, [pathname]);
+  }, [pathname, order]);
 
-  console.log(order);
   return (
     <div>
       <Heading className="mb-5 text-primary" size="xl">
@@ -425,7 +420,7 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
                 {/* {order.fulfillment_status === 'returned' ? <Tag variant="informative">{(order.fulfillment_status).toUpperCase()}</Tag>: <Tag variant="informative">{(order.status).toUpperCase()}</Tag>} */}
                 <Tag variant="informative">
                   {item.returned_quantity === null
-                    ? 'DELIVERED'
+                    ? order.fulfillment_status?.toUpperCase()
                     : order.fulfillment_status?.toUpperCase()}
                 </Tag>
 

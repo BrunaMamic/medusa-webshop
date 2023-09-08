@@ -33,7 +33,6 @@ const MyAccountPage: NextPageWithLayout = () => {
   const regions = useRegions();
 
   const allCountries = regions.regions?.flatMap((region) => region.countries);
-  console.log(allCountries);
   
 
   const {
@@ -63,7 +62,6 @@ const MyAccountPage: NextPageWithLayout = () => {
     }
   };
 
-  console.log(account?.customer);
 
   const handleAddAddress = handleSubmit(async (data) => {
     const newAddress = {
@@ -110,7 +108,6 @@ const MyAccountPage: NextPageWithLayout = () => {
   const handleDeleteAddress = async (addressId: any) => {
     const updatedCustomer = await account.deleteAddress(addressId);
     if (updatedCustomer) {
-      console.log('deleted');
       account.refetchCustomer();
     }
   };
@@ -351,7 +348,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                               (country) =>
                                 country.iso_2 === address.country_code
                             );
-                            console.log(country);
                             setSelectedCountry(country);
                           }}
                         >
@@ -423,7 +419,6 @@ const MyAccountPage: NextPageWithLayout = () => {
                                   (country) =>
                                     country.iso_2 === address.country_code
                                 );
-                                console.log(country);
                                 setSelectedCountry(country);
                               }}
                             >

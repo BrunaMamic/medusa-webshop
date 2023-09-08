@@ -8,7 +8,7 @@ export interface InputProps
   > {
   colorScheme?: 'primary' | 'secondary';
   visualSize?: 'sm' | 'lg';
-  label: string;
+  label?: string;
   errorMessage?: string;
   wrapperClassName?: string;
   icon?: IconProps['name'];
@@ -37,9 +37,9 @@ export const Input: React.FC<InputProps> = ({
   };
 
   const labelSizeClasses = {
-    'top-2.5 left-6 peer-placeholder-shown:!translate-y-1.5':
+    'top-2.5 left-6 peer-placeholder-shown:!translate-y-2.5 lg:peer-placeholder-shown:!translate-y-2':
       visualSize === 'sm',
-    'top-1 left-2.5 peer-placeholder-shown:translate-y-2 lg:top-3 lg:left-4 lg:peer-placeholder-shown:translate-y-1.5':
+    'top-1 left-2.5 peer-placeholder-shown:translate-y-3 lg:top-3 lg:left-4.5 lg:peer-placeholder-shown:translate-y-2.5':
       visualSize === 'lg',
   };
 
@@ -59,20 +59,23 @@ export const Input: React.FC<InputProps> = ({
             '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none':
               type === 'number' || type === 'phone',
           },
+          { 'placeholder:opacity-100': inputProps.placeholder },
           className
         )}
       />
 
-      <label
-        className={classNames(
-          labelBaseClasses,
-          labelSizeClasses,
-          { 'text-primary': colorScheme === 'secondary' },
-          { 'text-gray-200': disabled }
-        )}
-      >
-        {label}
-      </label>
+      {label && (
+        <label
+          className={classNames(
+            labelBaseClasses,
+            labelSizeClasses,
+            { 'text-primary': colorScheme === 'secondary' },
+            { 'text-gray-200': disabled }
+          )}
+        >
+          {label}
+        </label>
+      )}
 
       {Boolean(errorMessage) && (
         <span className="helper-message absolute -bottom-6 left-0 text-xs2 text-red-700">
@@ -110,7 +113,7 @@ export const baseClasses = [
 
 export const labelBaseClasses = [
   'absolute',
-  'text-gray-400',
+  '!text-gray-400',
   'text-xs2',
   'transition-all',
   'pointer-events-none',

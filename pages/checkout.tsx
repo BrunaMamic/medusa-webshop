@@ -35,10 +35,23 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
   const [email, setEmail] = useState<string>();
 
+  const [showBillingAddress, setShowBillingAddress] = React.useState(false);
+  const [billingAddressData, setBillingAddressData] = useState({
+    first_name: '',
+    last_name: '',
+    address_1: '',
+    address_2: '',
+    city: '',
+    postal_code: '',
+    phone: '',
+    country: 'ca',
+  });
+  console.log(billingAddressData);
+
   const router = useRouter();
 
   const account = useAccount();
-  const { cart, resetCart, countryCode } = useStore();
+  const { cart, resetCart, countryCode, addEmail } = useStore();
   const { updateCart, setCart } = useCart();
 
   const [shippingOptions, setShippingOptions] = React.useState<
@@ -55,8 +68,6 @@ const CheckoutPage: NextPageWithLayout = () => {
   const filteredCountries = allCountries?.filter(
     (country) => country.region_id === cart?.region_id
   );
-  console.log(filteredCountries);
-
   const handleApplyDiscount = async () => {
     try {
       await medusa.carts.update(cart?.id || '', {
@@ -84,6 +95,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   };
 
   const handleMethodSelection = (optionId: any) => {
+    console.log(optionId);
     setSelectedMethod(optionId);
   };
 
@@ -106,9 +118,7 @@ const CheckoutPage: NextPageWithLayout = () => {
     if (cartId) {
       medusa.carts
         .createPaymentSessions(cartId)
-        .then(({ cart }) => {
-          console.log('Initialized', cart.payment_sessions);
-        })
+        .then(({ cart }) => {})
         .catch((error) => {
           console.error('Error', error);
         });
@@ -126,9 +136,9 @@ const CheckoutPage: NextPageWithLayout = () => {
   };
 
   useEffect(() => {
-    if (step === 2 && !cart?.shipping_address?.country_code) {
+    if (step === 2 && !cart?.shipping_address_id) {
       copyShippingAddressToCart();
-      copyBillingAddress();
+      // copyBillingAddress();
     }
 
     if (step === 3 && (cart?.shipping_methods || [])?.length > 0) {
@@ -136,6 +146,8 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
     shippingMethodSelection();
   }, [step, cart]);
+
+  console.log(cart?.billing_address);
 
   const copyBillingAddress = () => {
     const shippingAddress = account.customer?.shipping_addresses[0];
@@ -154,24 +166,23 @@ const CheckoutPage: NextPageWithLayout = () => {
       } = shippingAddress;
 
       if (cart?.id) {
-        updateCart
-          .mutateAsync({
-            billing_address: {
-              company,
-              first_name,
-              last_name,
-              address_1,
-              address_2,
-              city,
-              country_code,
-              province,
-              postal_code,
-              phone,
-            } as AddressPayload,
-          })
-          .then(({ cart }) => {
-            console.log('billing UPDATE', cart.billing_address);
-          });
+        updateCart.mutateAsync({
+          billing_address: {
+            company,
+            first_name,
+            last_name,
+            address_1,
+            address_2,
+            city,
+            country_code,
+            province,
+            postal_code,
+            phone,
+          } as AddressPayload,
+        });
+        // .then(({ cart }) => {
+        //   console.log('billing UPDATE', cart.billing_address);
+        // });
       }
     }
   };
@@ -196,25 +207,51 @@ const CheckoutPage: NextPageWithLayout = () => {
       } = shippingAddress;
 
       if (cart?.id) {
-        updateCart
-          .mutateAsync({
-            shipping_address: {
-              company,
-              first_name,
-              last_name,
-              address_1,
-              address_2,
-              city,
-              country_code,
-              province,
-              postal_code,
-              phone,
-            } as AddressPayload,
-          })
-          .then(({ cart }) => {
-            console.log('CART UPDATE', cart.shipping_address);
-          });
+        updateCart.mutateAsync({
+          shipping_address: {
+            company,
+            first_name,
+            last_name,
+            address_1,
+            address_2,
+            city,
+            country_code,
+            province,
+            postal_code,
+            phone,
+          } as AddressPayload,
+        });
+        // .then(({ cart }) => {
+        //   console.log('CART UPDATE', cart.shipping_address);
+        // });
       }
+    }
+  };
+
+  const handleBillingAddressChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof typeof billingAddressData
+  ) => {
+    const updatedBillingAddressData: typeof billingAddressData = {
+      ...billingAddressData,
+    };
+    updatedBillingAddressData[field] = e.target.value;
+    setBillingAddressData(updatedBillingAddressData);
+  };
+
+  const newBillingAddress = () => {
+    console.log('nova');
+
+    if (cart?.id) {
+      updateCart
+        .mutateAsync({
+          billing_address: {
+            ...billingAddressData,
+          } as AddressPayload,
+        })
+        .then(({ cart }) => {
+          console.log('BILLING', cart.billing_address);
+        });
     }
   };
 
@@ -230,15 +267,17 @@ const CheckoutPage: NextPageWithLayout = () => {
       return;
     }
     setErrorMessage('');
-    await updateCart
-      .mutateAsync({
-        shipping_address: {
-          country_code: payload,
-        } as AddressPayload,
-      })
-      .then(({ cart }) => {
-        console.log('CART UPDATE', cart.shipping_address);
-      });
+    await updateCart.mutateAsync({
+      shipping_address: {
+        country_code: payload,
+      } as AddressPayload,
+      billing_address: {
+        country_code: payload,
+      } as AddressPayload,
+    });
+    // .then(({ cart }) => {
+    //   console.log('CART UPDATE', cart.shipping_address);
+    // });
   };
 
   const renderAddressOrEmpty = () => {
@@ -364,7 +403,10 @@ const CheckoutPage: NextPageWithLayout = () => {
                   wrapperClassName="[&>span]:static"
                   defaultValue={cart?.email}
                   disabled={!!account.customer}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    // addEmail(e.target.value)
+                  }}
                 />
 
                 <div className="mt-3.5 flex items-start gap-1">
@@ -525,14 +567,145 @@ const CheckoutPage: NextPageWithLayout = () => {
                   />
                 </fieldset>
 
+                <div className="my-10 flex items-start gap-1">
+                  <input
+                    onClick={() => setShowBillingAddress(!showBillingAddress)}
+                    type="checkbox"
+                    name="email"
+                    id="email"
+                    className="relative h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
+                  />
+                  <label
+                    htmlFor="email"
+                    className="cursor-pointer text-xs2 text-gray-400 lg:text-xs"
+                  >
+                    Use different billing address
+                  </label>
+                </div>
+
+                {showBillingAddress && (
+                  <>
+                    <p className="mb-7 font-black italic text-primary">
+                      Billing details
+                    </p>
+
+                    <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
+                      <SelectCountry
+                        selectedCountry={cart?.region.countries.find(
+                          (x) =>
+                            x.iso_2 === cart?.shipping_address?.country_code
+                        )}
+                        onCountryChange={(country: Country): void => {
+                          updateCountry(country.iso_2);
+                        }}
+                      />
+                      {errorMessage && (
+                        <span className="text-red-700">{errorMessage}</span>
+                      )}
+
+                      <div className="flex gap-x-4 lg:gap-x-12">
+                        <Input
+                          type="text"
+                          label="First name"
+                          wrapperClassName="w-full"
+                          name="firstName"
+                          value={billingAddressData.first_name}
+                          onChange={(e) =>
+                            handleBillingAddressChange(e, 'first_name')
+                          }
+                        />
+
+                        <Input
+                          type="text"
+                          label="Last name"
+                          wrapperClassName="w-full"
+                          name="lastName"
+                          value={billingAddressData.last_name}
+                          onChange={(e) =>
+                            handleBillingAddressChange(e, 'last_name')
+                          }
+                        />
+                      </div>
+
+                      <Input
+                        type="text"
+                        label="Address"
+                        name="address"
+                        value={billingAddressData.address_1}
+                        onChange={(e) =>
+                          handleBillingAddressChange(e, 'address_1')
+                        }
+                      />
+
+                      <Input
+                        type="text"
+                        label="Apartment, suite, etc. (Optional)"
+                        name="apartment"
+                        value={billingAddressData.address_2}
+                        onChange={(e) =>
+                          handleBillingAddressChange(e, 'address_2')
+                        }
+                      />
+
+                      <div className="flex gap-x-4 lg:gap-x-12">
+                        <Input
+                          type="number"
+                          label="Postal Code"
+                          wrapperClassName="w-full"
+                          name="postalCode"
+                          value={billingAddressData.postal_code}
+                          onChange={(e) =>
+                            handleBillingAddressChange(e, 'postal_code')
+                          }
+                        />
+
+                        <Input
+                          type="text"
+                          label="City"
+                          wrapperClassName="w-full"
+                          name="city"
+                          value={billingAddressData.city}
+                          onChange={(e) =>
+                            handleBillingAddressChange(e, 'city')
+                          }
+                        />
+                      </div>
+
+                      <Input
+                        type="phone"
+                        label="Phone"
+                        defaultValue="+385"
+                        name="phone"
+                        value={billingAddressData.phone}
+                        onChange={(e) => handleBillingAddressChange(e, 'phone')}
+                      />
+                    </fieldset>
+                  </>
+                )}
+
                 <Button
                   type="submit"
                   size="lg"
                   className="mt-10"
-                  onPress={() => {
+                  onPress={async () => {
                     setStep(3);
                     shippingMethodSelection();
-                    copyBillingAddress();
+
+                    if (showBillingAddress) {
+                      await updateCart.mutateAsync({
+                        billing_address: {
+                          first_name: billingAddressData.first_name,
+                          last_name: billingAddressData.last_name,
+                          address_1: billingAddressData.address_1,
+                          address_2: billingAddressData.address_2,
+                          city: billingAddressData.city,
+                          postal_code: billingAddressData.postal_code,
+                          phone: billingAddressData.phone,
+                        },
+                      });
+                    } else {
+                      copyBillingAddress();
+                    }
                   }}
                 >
                   Next

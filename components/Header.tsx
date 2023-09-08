@@ -9,6 +9,9 @@ import { useCart } from 'medusa-react';
 import { RegionPicker } from './ui/RegionPicker';
 import { useState } from 'react';
 import { useAccount } from '@/lib/context/account-context';
+import { Input } from './Input';
+
+import SearchDropdown from '../components/ui/SearchDropdown';
 
 export interface HeaderProps {
   isAbsolute?: boolean;
@@ -21,13 +24,14 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const pathName = usePathname();
   const [isOffcanvasOpen, setIsOffcanvasOpen] = React.useState(false);
-  const {cart} = useCart()
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const { cart } = useCart();
 
   return (
     <>
       <div
         className={classNames(
-          'flex h-21 items-center justify-between bg-white px-4 lg:px-24',
+          'flex h-21 items-center justify-between bg-white px-4 md:gap-10 lg:px-24',
           colorScheme === 'primary' && 'border-b border-b-primary',
           colorScheme === 'inverted' && '!bg-transparent text-white',
           isAbsolute && 'absolute left-0 right-0 top-0 z-site-header'
@@ -53,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
             </svg>
           </Link>
 
-          <ul className="ml-30 hidden text-sm md:flex [&>li:last-child]:mr-0 [&>li]:mr-8">
+          <ul className="ml-15 hidden text-sm md:flex xl:ml-30 [&>li:last-child]:mr-0 [&>li]:mr-8">
             <li>
               <Link href="/shop">Shop</Link>
             </li>
@@ -96,12 +100,53 @@ export const Header: React.FC<HeaderProps> = ({
           ></span>
         </button>
 
-        <ul className="hidden md:flex [&>li:last-child]:mr-0 [&>li]:mr-8 [&>li]:cursor-pointer">
-          <li>
-            <Icon name="search" />
+        <ul className="hidden md:flex md:items-center [&>li:last-child]:mr-0 [&>li]:mr-8 [&>li]:cursor-pointer">
+          <li className="relative !mr-4 flex">
+            <SearchDropdown
+              colorScheme={colorScheme}
+              isSearchOpen={isSearchOpen}
+              setIsSearchOpen={setIsSearchOpen}
+            />
+            {/* <Input
+              placeholder="Search"
+              className={classNames('!pl-13 rounded-sm !pr-9 transition-all md:!py-4 md:placeholder-shown:!py-4 lg:!py-4 lg:placeholder-shown:!py-4', colorScheme === 'inverted' && 'text-white')}
+              wrapperClassName={classNames(
+                'w-0 overflow-hidden transition-width',
+                isSearchOpen && 'xl:w-84 w-50'
+              )}
+              label={''}
+            />
+
+            <button
+              className={classNames(
+                'absolute right-4 top-4 transition-opacity',
+                isSearchOpen && 'opacity-0'
+              )}
+              onClick={() => setIsSearchOpen(true)}
+            >
+              <Icon name="search" />
+            </button>
+            <button
+              className={classNames(
+                'pointer-events-none absolute right-4 top-4 opacity-0 transition-opacity',
+                isSearchOpen && 'pointer-events-auto opacity-100'
+              )}
+              onClick={() => setIsSearchOpen(false)}
+            >
+              <Icon name="x" />
+            </button>
+
+            <button
+              className={classNames(
+                'transtion-opacity pointer-events-none absolute left-4 top-4 z-10 opacity-0 delay-75 xl:delay-100',
+                isSearchOpen && 'pointer-events-auto opacity-100'
+              )}
+            >
+              <Icon name="search" className="w-5" />
+            </button> */}
           </li>
           <li>
-          <RegionPicker
+            <RegionPicker
               colorScheme={colorScheme}
               defaultValue={{ id: 'hr', currency: 'eur' }}
             />

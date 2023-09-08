@@ -24,7 +24,6 @@ const MyAccountLoginPage: NextPageWithLayout = () => {
     watch,
   } = useForm();
 
-  console.log(account.customer);
 
   const router = useRouter();
 

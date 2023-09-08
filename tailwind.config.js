@@ -82,6 +82,7 @@ module.exports = {
         9: '2.25rem',
         9.25: '2.3125rem',
         10.5: '2.625rem',
+        13: '3.25rem',
         13.5: '3.375rem',
         15: '3.75rem',
         15.5: '3.875rem',
@@ -104,6 +105,7 @@ module.exports = {
         42: '10.5rem',
         47: '11.75rem',
         50: '12.5rem',
+        84: '21rem',
       },
       zIndex: {
         'size-tag': '1010',
@@ -112,6 +114,10 @@ module.exports = {
         'dialog-content': '1031',
         'site-header': '2000',
         'site-header-hamburger': '2001',
+      },
+      transitionProperty: {
+        width: 'width',
+        opacity: 'opacity',
       },
       keyframes: {
         fadeOut: {

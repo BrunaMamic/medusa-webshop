@@ -45,7 +45,6 @@ const MyAccountRegisterPage = () => {
 
     if (customer) {
       account.refetchCustomer();
-      console.log('kreiran:', customer);
     }
 
     router.push('/my-account');

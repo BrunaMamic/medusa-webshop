@@ -21,13 +21,13 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { id } = router.query as { id: string };
   
+  
   const [orderData, setOrderData] = useState<Order | undefined>(undefined);
 
   useEffect(() => {
     medusa.orders.retrieve(id)
       .then(({ order }:any) => {
-        console.log('Order Data:', order);
-        setOrderData(order);
+        setOrderData(order);   
       })
       .catch((error) => {
         console.error('Error', error);
@@ -62,16 +62,16 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
 
             <ul className="mt-8 text-gray-600 sm:mt-16">
               <li className="mb-2">Shipping adress:</li>
-              {orderData?.shipping_address.address_1},{' '}<br/>
-              {orderData?.shipping_address.postal_code}{' '}
-              {orderData?.shipping_address.city},{' '}
+              {orderData?.shipping_address?.address_1},{' '}<br/>
+              {orderData?.shipping_address?.postal_code}{' '}
+              {orderData?.shipping_address?.city},{' '}
               {
                 orderData?.region?.countries?.find(
                   (country: any) =>
                     country?.iso_2 === orderData?.shipping_address?.country_code
                 )?.display_name
               }
-              {orderData?.shipping_address.country_code}
+              {orderData?.shipping_address?.country_code}
             </ul>
           </div>
 
@@ -81,8 +81,8 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
 
             <ul className="mt-8 text-gray-600 sm:mt-16">
               <li className="mb-2">Payment:</li>
-              <li>{orderData?.shipping_address.first_name}{' '}
-              {orderData?.shipping_address.last_name}{' '}</li>
+              <li>{orderData?.shipping_address?.first_name}{' '}
+              {orderData?.shipping_address?.last_name}{' '}</li>
               <li>CASH</li>
             </ul>
           </div>

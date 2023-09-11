@@ -22,7 +22,7 @@ import { useCart, useRegions } from 'medusa-react';
 import { AddressPayload } from '@medusajs/types';
 import { useEffect, useState } from 'react';
 
-import { MEDUSA_BACKEND_URL, medusaClient } from '../lib/config';
+import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import Medusa from '@medusajs/medusa-js';
 import { PricedShippingOption } from '@medusajs/medusa/dist/types/pricing';
 import { useRouter } from 'next/router';
@@ -36,6 +36,8 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [email, setEmail] = useState<string>();
 
   const [showBillingAddress, setShowBillingAddress] = React.useState(false);
+  const account = useAccount();
+
   const [billingAddressData, setBillingAddressData] = useState({
     first_name: '',
     last_name: '',
@@ -44,13 +46,11 @@ const CheckoutPage: NextPageWithLayout = () => {
     city: '',
     postal_code: '',
     phone: '',
-    country: 'ca',
+    country: account.customer?.shipping_addresses[0].country_code,
   });
-  console.log(billingAddressData);
 
   const router = useRouter();
 
-  const account = useAccount();
   const { cart, resetCart, countryCode, addEmail } = useStore();
   const { updateCart, setCart } = useCart();
 
@@ -62,6 +62,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
   const [invalidDiscount, setInvalidDiscount] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const regions = useRegions();
   const allCountries = regions.regions?.flatMap((region) => region.countries);
@@ -147,8 +148,6 @@ const CheckoutPage: NextPageWithLayout = () => {
     shippingMethodSelection();
   }, [step, cart]);
 
-  console.log(cart?.billing_address);
-
   const copyBillingAddress = () => {
     const shippingAddress = account.customer?.shipping_addresses[0];
     if (shippingAddress) {
@@ -187,6 +186,7 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
+  console.log('cart', cart?.billing_address);
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
     const shippingAddress = account.customer?.shipping_addresses?.filter(
@@ -254,8 +254,6 @@ const CheckoutPage: NextPageWithLayout = () => {
         });
     }
   };
-
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const updateCountry = async (payload: any) => {
     const selectedCountry = allCountries?.find(
@@ -348,6 +346,25 @@ const CheckoutPage: NextPageWithLayout = () => {
       console.error('Error:', error);
     }
     resetCart();
+  };
+
+  const getNewBillingAddress = async () => {
+    try {
+      await updateCart.mutateAsync({
+        billing_address: {
+          first_name: billingAddressData.first_name,
+          last_name: billingAddressData.last_name,
+          address_1: billingAddressData.address_1,
+          address_2: billingAddressData.address_2,
+          city: billingAddressData.city,
+          postal_code: billingAddressData.postal_code,
+          phone: billingAddressData.phone,
+          country_code: billingAddressData.country || '',
+        },
+      });
+    } catch (e) {
+      console.error('ERROR', e);
+    }
   };
 
   return (
@@ -592,11 +609,13 @@ const CheckoutPage: NextPageWithLayout = () => {
                     <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
                       <SelectCountry
                         selectedCountry={cart?.region.countries.find(
-                          (x) =>
-                            x.iso_2 === cart?.shipping_address?.country_code
+                          (x) => x.iso_2 === billingAddressData.country
                         )}
                         onCountryChange={(country: Country): void => {
-                          updateCountry(country.iso_2);
+                          setBillingAddressData((prev) => ({
+                            ...prev,
+                            country: country.iso_2,
+                          }));
                         }}
                       />
                       {errorMessage && (
@@ -684,25 +703,14 @@ const CheckoutPage: NextPageWithLayout = () => {
                 )}
 
                 <Button
-                  type="submit"
                   size="lg"
                   className="mt-10"
-                  onPress={async () => {
+                  onPress={() => {
                     setStep(3);
                     shippingMethodSelection();
 
                     if (showBillingAddress) {
-                      await updateCart.mutateAsync({
-                        billing_address: {
-                          first_name: billingAddressData.first_name,
-                          last_name: billingAddressData.last_name,
-                          address_1: billingAddressData.address_1,
-                          address_2: billingAddressData.address_2,
-                          city: billingAddressData.city,
-                          postal_code: billingAddressData.postal_code,
-                          phone: billingAddressData.phone,
-                        },
-                      });
+                      getNewBillingAddress();
                     } else {
                       copyBillingAddress();
                     }

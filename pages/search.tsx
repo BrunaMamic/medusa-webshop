@@ -1,109 +1,44 @@
 import * as React from 'react';
-import * as Dropdown from '@radix-ui/react-dropdown-menu';
-
-import type { NextPageWithLayout } from '@/pages/_app';
-import DefaultLayout from '@/layouts/DefaultLayout';
+import { useEffect, useState } from 'react';
+import { useCart } from 'medusa-react';
+import { useRouter } from 'next/router';
+import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
 import { Heading } from '@/components/ui/Heading';
 import { Product } from '@/components/Product';
-import { Icon } from '@/components/ui/Icon';
+import DefaultLayout from '@/layouts/DefaultLayout';
 
-import { useEffect, useState } from "react";
-import { useCart, useProducts } from "medusa-react";
-import Link from 'next/link';
-import _ from 'lodash';
-import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
-import { useRouter } from 'next/router';
-
-const sortingOptions = [
-  'Whatever',
-  'Newest',
-  'Lowest price',
-  'Highest price',
-  'Discount',
-];
-
-const ShopFilter = ({
-  selectedFilter,
-  setSelectedFilter,
-}: {
-  selectedFilter: string;
-  setSelectedFilter: (filter: string) => void;
-}) => {
-  return (
-    <Dropdown.Root>
-      <Dropdown.Trigger asChild>
-        <button className="dropdown-trigger text-gray-300 transition-all hover:text-black">
-          <div className="flex text-sm">
-            <p>Sort by:</p>
-            <Icon
-              name="chevron-down"
-              className="ml-2 transition-all [&>path]:stroke-gray-300"
-            />
-          </div>
-          <p className="text-sm font-black italic">{selectedFilter}</p>
-        </button>
-      </Dropdown.Trigger>
-
-      <Dropdown.Content
-        className="dropdown-content w-56.5"
-        sideOffset={24}
-        align="end"
-      >
-        {sortingOptions.map((option) => (
-          <Dropdown.Item
-            key={option}
-            className="dropdown-item font-black italic text-primary"
-            onClick={() => setSelectedFilter(option)}
-          >
-            {option}
-          </Dropdown.Item>
-        ))}
-      </Dropdown.Content>
-    </Dropdown.Root>
-  );
-};
+import Medusa from "@medusajs/medusa-js";
+import { MEDUSA_BACKEND_URL } from '@/lib/config';
+import { NextPageWithLayout } from './_app';
+const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
 const ShopPage: NextPageWithLayout = () => {
-  const { products, isLoading } = useProducts();
-  const {cart} = useCart()
-  const [selectedFilter, setSelectedFilter] = React.useState('Whatever');
-  const [filteredProducts, setFilteredProducts] = React.useState(products);
-
+  const { cart } = useCart();
   const router = useRouter();
   const { title } = router.query;
 
-  const applySorting = (filter: string) => {
-    if (filter === 'Whatever') {
-      setFilteredProducts([...(products || [])]);
-    } else {
-      const sortedProducts = [...(products || [])];
-      sortedProducts.sort((a, b) => {
-        switch (filter) {
-          case 'Newest':
-            return b.created_at?.localeCompare(a.created_at);
-          case 'Lowest price':
-            return (
-              a.variants[0]?.prices[0]?.amount - b.variants[0]?.prices[0]?.amount
-            );
-          case 'Highest price':
-            return (
-              b.variants[0]?.prices[0]?.amount - a.variants[0]?.prices[0]?.amount
-            ); 
-          case 'Discount':
-            const discountA = a.discount || 0;
-            const discountB = b.discount || 0;
-            return discountB - discountA;
-          default:
-            return 0; 
-        }
-      });
-      setFilteredProducts(sortedProducts);
+  const searchTerm = router.query.title as string;  
+
+  const fetchProducts = async (searchTerm: string) => {
+    try {
+      const { hits } = await medusa.products.search({ q: searchTerm });
+      console.log(hits);
+      
+      return hits;
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      return [];
     }
   };
 
+  const [filteredProducts, setFilteredProducts] = useState([]);
   useEffect(() => {
-    applySorting(selectedFilter);
-  }, [selectedFilter, products]);
+    if (searchTerm) {
+      fetchProducts(searchTerm).then((data:any) => {
+        setFilteredProducts(data);
+      });
+    }
+  }, [searchTerm]);
 
   return (
     <>
@@ -112,44 +47,37 @@ const ShopPage: NextPageWithLayout = () => {
           <Heading size="xl6" className="text-primary">
             {title}
           </Heading>
-
-          <ShopFilter selectedFilter={selectedFilter}
-          setSelectedFilter={setSelectedFilter}/>
         </div>
 
         <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
-          
-        {filteredProducts?.map((product: any) => {
-          if (!filteredProducts) {
-            return null;
-          }
-          const calculatedPrice = getPriceByCurrency(
-            product.variants[0].prices,
-            cart?.region?.currency_code || '', 1
-          );
+          {filteredProducts?.map((hit: any) => { 
+            if (!filteredProducts) {
+              return null;
+            }
+            const calculatedPrice = getPriceByCurrency(
+              hit?.variants?.[0]?.prices,
+              cart?.region?.currency_code || '',
+              1
+            );
 
             return (
               <Product
-                key={product.id}
+                key={hit.objectID} 
                 className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-                title={product.title}
+                title={hit.title}
                 calculatedPrice={calculatedPrice}
-                discount={product.discount}
-                discountedPrice={product.discountedPrice}
-                collection={product.collection?.handle}
-                src={product.images[0]?.url}
+                discount={hit.discount}
+                discountedPrice={hit.discountedPrice}
+                collection={hit.collection?.handle}
+                src={hit.thumbnail}
                 height={3200}
                 width={2400}
-                alt={product.title}
-                linkTo={`/product/${product.handle}`}
+                alt={hit.title}
+                linkTo={`/product/${hit.handle}`}
               />
             );
           })}
         </div>
-
-        <button className="relative mx-auto mt-9 block transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2">
-          There is more
-        </button>
       </main>
     </>
   );

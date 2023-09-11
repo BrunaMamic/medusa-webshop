@@ -4,7 +4,12 @@ import { Input } from '../Input';
 import classNames from '@/utils/classNames';
 import { Icon } from './Icon';
 import { useRouter } from 'next/router';
+import Medusa from "@medusajs/medusa-js"; // Import Medusa library
 import { useProducts } from 'medusa-react';
+import { MEDUSA_BACKEND_URL } from '@/lib/config';
+import { medusaClient } from '@/lib/config';
+
+// const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 }); // Initialize Medusa with your backend URL
 
 function SearchDropdown({ colorScheme, isSearchOpen, setIsSearchOpen }: any) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,15 +34,33 @@ function SearchDropdown({ colorScheme, isSearchOpen, setIsSearchOpen }: any) {
   };
 
   const [filteredItems, setFilteredItems] = useState<string[]>([]);
+  
+  const fetchMedusaSearchResults = async (term: string) => {
+    try {
+      const response = await medusaClient.products.search({
+        q: term,
+      });
+    console.log(response);
+
+      return response.hits;
+    } catch (error) {
+      console.error("Error fetching Medusa search results:", error);
+      return [];
+    }
+    
+  };
+
   useEffect(() => {
     if (searchTerm.length > 0) {
-      setFilteredItems(() => {
-        return (products || [])
-          ?.filter((product: any) =>
-            product.title.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-          .map((product) => product.title || '');
-      });
+      fetchMedusaSearchResults(searchTerm)
+        .then((medusaResults) => {
+          setFilteredItems(() => {
+            return (medusaResults || []).map((product:any) => product.title || '');
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching Medusa search results:", error);
+        });
     } else {
       setFilteredItems([]);
     }

@@ -26,6 +26,7 @@ import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import Medusa from '@medusajs/medusa-js';
 import { PricedShippingOption } from '@medusajs/medusa/dist/types/pricing';
 import { useRouter } from 'next/router';
+import AddressForm from '@/components/DeliveryAddress';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
@@ -65,6 +66,25 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const regions = useRegions();
+
+  const [formData, setFormData] = useState({
+    // Initialize your form data state here for both delivery and billing addresses
+  });
+
+  const updateField = (value:any, fieldName:any) => {
+    setFormData({
+      ...formData,
+      [fieldName]: value,
+    });
+  };
+
+  const handleBillingAddressChange = (event:any, fieldName:any) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [fieldName]: event.target.value,
+    }));
+  };
+
   const allCountries = regions.regions?.flatMap((region) => region.countries);
   const filteredCountries = allCountries?.filter(
     (country) => country.region_id === cart?.region_id
@@ -224,16 +244,16 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  const handleBillingAddressChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: string
-  ) => {
-    const { value } = e.target;
-    setBillingAddressData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // const handleBillingAddressChange = (
+  //   e: React.ChangeEvent<HTMLInputElement>,
+  //   field: string
+  // ) => {
+  //   const { value } = e.target;
+  //   setBillingAddressData((prev) => ({
+  //     ...prev,
+  //     [field]: value,
+  //   }));
+  // };
 
   // const handleBillingAddressChange = (
   //   e: React.ChangeEvent<HTMLInputElement>,
@@ -328,17 +348,17 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  const updateField = async (value: string, key: string) => {
-    try {
-      await updateCart.mutateAsync({
-        shipping_address: {
-          [key]: value,
-        },
-      });
-    } catch (e) {
-      console.log('ERROR', e);
-    }
-  };
+  // const updateField = async (value: string, key: string) => {
+  //   try {
+  //     await updateCart.mutateAsync({
+  //       shipping_address: {
+  //         [key]: value,
+  //       },
+  //     });
+  //   } catch (e) {
+  //     console.log('ERROR', e);
+  //   }
+  // };
 
   const handlePlaceOrder = async () => {
     try {
@@ -587,6 +607,7 @@ const CheckoutPage: NextPageWithLayout = () => {
             {step === 2 ? (
               <form>
                 <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
+                {/* <AddressForm formData={formData} updateField={updateField} /> */}
                   <SelectCountry
                     selectedCountry={cart?.region.countries.find(
                       (x) => x.iso_2 === cart?.shipping_address?.country_code

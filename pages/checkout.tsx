@@ -20,7 +20,7 @@ import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
 import { useCart, useRegions } from 'medusa-react';
 import { AddressPayload } from '@medusajs/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import Medusa from '@medusajs/medusa-js';
@@ -57,7 +57,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   const [shippingOptions, setShippingOptions] = React.useState<
     PricedShippingOption[] | undefined
   >();
-  const [selectedMethod, setSelectedMethod] = useState<any>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
 
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
@@ -95,7 +95,7 @@ const CheckoutPage: NextPageWithLayout = () => {
       });
   };
 
-  const handleMethodSelection = (optionId: any) => {
+  const handleMethodSelection = (optionId: string) => {
     console.log(optionId);
     setSelectedMethod(optionId);
   };
@@ -106,7 +106,7 @@ const CheckoutPage: NextPageWithLayout = () => {
         .addShippingMethod(cart?.id as string, {
           option_id: selectedMethod,
         })
-        .then(({ cart }: any) => {
+        .then(({ cart }) => {
           setCart(cart);
         })
         .catch((error) => {
@@ -115,7 +115,7 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  const createPaymentSession = (cartId: any) => {
+  const createPaymentSession = (cartId: string) => {
     if (cartId) {
       medusa.carts
         .createPaymentSessions(cartId)
@@ -179,14 +179,10 @@ const CheckoutPage: NextPageWithLayout = () => {
             phone,
           } as AddressPayload,
         });
-        // .then(({ cart }) => {
-        //   console.log('billing UPDATE', cart.billing_address);
-        // });
       }
     }
   };
 
-  console.log('cart', cart?.billing_address);
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
     const shippingAddress = account.customer?.shipping_addresses?.filter(
@@ -230,14 +226,25 @@ const CheckoutPage: NextPageWithLayout = () => {
 
   const handleBillingAddressChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof typeof billingAddressData
+    field: string
   ) => {
-    const updatedBillingAddressData: typeof billingAddressData = {
-      ...billingAddressData,
-    };
-    updatedBillingAddressData[field] = e.target.value;
-    setBillingAddressData(updatedBillingAddressData);
+    const { value } = e.target;
+    setBillingAddressData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
+
+  // const handleBillingAddressChange = (
+  //   e: React.ChangeEvent<HTMLInputElement>,
+  //   field: keyof typeof billingAddressData
+  // ) => {
+  //   const updatedBillingAddressData: typeof billingAddressData = {
+  //     ...billingAddressData,
+  //   };
+  //   updatedBillingAddressData[field] = e.target.value;
+  //   setBillingAddressData(updatedBillingAddressData);
+  // };
 
   const newBillingAddress = () => {
     console.log('nova');
@@ -255,7 +262,7 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  const updateCountry = async (payload: any) => {
+  const updateCountry = async (payload:string) => {
     const selectedCountry = allCountries?.find(
       (country) => country.iso_2 === payload
     );
@@ -300,7 +307,7 @@ const CheckoutPage: NextPageWithLayout = () => {
               {cart?.shipping_address?.city},{' '}
               {
                 cart?.region?.countries.find(
-                  (country: any) =>
+                  (country: Country) =>
                     country?.iso_2 === cart?.shipping_address?.country_code
                 )?.display_name
               }
@@ -366,6 +373,93 @@ const CheckoutPage: NextPageWithLayout = () => {
       console.error('ERROR', e);
     }
   };
+
+  const billingAddressElements = useMemo(() => {
+    return showBillingAddress ? (
+      <>
+        <p className="mb-7 font-black italic text-primary">Billing details</p>
+        <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
+          <SelectCountry
+            selectedCountry={cart?.region?.countries.find(
+              (x) => x.iso_2 === billingAddressData.country
+            )}
+            onCountryChange={(country: Country): void => {
+              setBillingAddressData((prev) => ({
+                ...prev,
+                country: country.iso_2,
+              }));
+            }}
+          />
+          {errorMessage && <span className="text-red-700">{errorMessage}</span>}
+
+          <div className="flex gap-x-4 lg:gap-x-12">
+            <Input
+              type="text"
+              label="First name"
+              wrapperClassName="w-full"
+              name="firstName"
+              value={billingAddressData.first_name}
+              onChange={(e) => handleBillingAddressChange(e, 'first_name')}
+            />
+
+            <Input
+              type="text"
+              label="Last name"
+              wrapperClassName="w-full"
+              name="lastName"
+              value={billingAddressData.last_name}
+              onChange={(e) => handleBillingAddressChange(e, 'last_name')}
+            />
+          </div>
+
+          <Input
+            type="text"
+            label="Address"
+            name="address"
+            value={billingAddressData.address_1}
+            onChange={(e) => handleBillingAddressChange(e, 'address_1')}
+          />
+
+          <Input
+            type="text"
+            label="Apartment, suite, etc. (Optional)"
+            name="apartment"
+            value={billingAddressData.address_2}
+            onChange={(e) => handleBillingAddressChange(e, 'address_2')}
+          />
+
+          <div className="flex gap-x-4 lg:gap-x-12">
+            <Input
+              type="number"
+              label="Postal Code"
+              wrapperClassName="w-full"
+              name="postalCode"
+              value={billingAddressData.postal_code}
+              onChange={(e) => handleBillingAddressChange(e, 'postal_code')}
+            />
+
+            <Input
+              type="text"
+              label="City"
+              wrapperClassName="w-full"
+              name="city"
+              value={billingAddressData.city}
+              onChange={(e) => handleBillingAddressChange(e, 'city')}
+            />
+          </div>
+
+          <Input
+            type="phone"
+            label="Phone"
+            defaultValue="+385"
+            name="phone"
+            value={billingAddressData.phone}
+            onChange={(e) => handleBillingAddressChange(e, 'phone')}
+          />
+        </fieldset>
+      </>
+    ) : null;
+  }, [showBillingAddress, billingAddressData]);
 
   return (
     <div className="flex h-full flex-col-reverse lg:flex-row">
@@ -600,107 +694,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                   </label>
                 </div>
 
-                {showBillingAddress && (
-                  <>
-                    <p className="mb-7 font-black italic text-primary">
-                      Billing details
-                    </p>
-
-                    <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
-                      <SelectCountry
-                        selectedCountry={cart?.region.countries.find(
-                          (x) => x.iso_2 === billingAddressData.country
-                        )}
-                        onCountryChange={(country: Country): void => {
-                          setBillingAddressData((prev) => ({
-                            ...prev,
-                            country: country.iso_2,
-                          }));
-                        }}
-                      />
-                      {errorMessage && (
-                        <span className="text-red-700">{errorMessage}</span>
-                      )}
-
-                      <div className="flex gap-x-4 lg:gap-x-12">
-                        <Input
-                          type="text"
-                          label="First name"
-                          wrapperClassName="w-full"
-                          name="firstName"
-                          value={billingAddressData.first_name}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'first_name')
-                          }
-                        />
-
-                        <Input
-                          type="text"
-                          label="Last name"
-                          wrapperClassName="w-full"
-                          name="lastName"
-                          value={billingAddressData.last_name}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'last_name')
-                          }
-                        />
-                      </div>
-
-                      <Input
-                        type="text"
-                        label="Address"
-                        name="address"
-                        value={billingAddressData.address_1}
-                        onChange={(e) =>
-                          handleBillingAddressChange(e, 'address_1')
-                        }
-                      />
-
-                      <Input
-                        type="text"
-                        label="Apartment, suite, etc. (Optional)"
-                        name="apartment"
-                        value={billingAddressData.address_2}
-                        onChange={(e) =>
-                          handleBillingAddressChange(e, 'address_2')
-                        }
-                      />
-
-                      <div className="flex gap-x-4 lg:gap-x-12">
-                        <Input
-                          type="number"
-                          label="Postal Code"
-                          wrapperClassName="w-full"
-                          name="postalCode"
-                          value={billingAddressData.postal_code}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'postal_code')
-                          }
-                        />
-
-                        <Input
-                          type="text"
-                          label="City"
-                          wrapperClassName="w-full"
-                          name="city"
-                          value={billingAddressData.city}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'city')
-                          }
-                        />
-                      </div>
-
-                      <Input
-                        type="phone"
-                        label="Phone"
-                        defaultValue="+385"
-                        name="phone"
-                        value={billingAddressData.phone}
-                        onChange={(e) => handleBillingAddressChange(e, 'phone')}
-                      />
-                    </fieldset>
-                  </>
-                )}
+                {billingAddressElements}
 
                 <Button
                   size="lg"
@@ -760,7 +754,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                         id={option.id}
                         className="peer hidden"
                         value={option.name}
-                        onChange={() => handleMethodSelection(option.id)}
+                        onChange={() => handleMethodSelection(option.id!)}
                         checked={selectedMethod === option.id}
                       />
                       <label
@@ -851,7 +845,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                     {cart?.billing_address?.city},{' '}
                     {
                       cart?.region?.countries.find(
-                        (country: any) =>
+                        (country: Country) =>
                           country?.iso_2 ===
                           cart?.shipping_address?.country_code
                       )?.display_name

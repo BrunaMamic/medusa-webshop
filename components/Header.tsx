@@ -107,43 +107,6 @@ export const Header: React.FC<HeaderProps> = ({
               isSearchOpen={isSearchOpen}
               setIsSearchOpen={setIsSearchOpen}
             />
-            {/* <Input
-              placeholder="Search"
-              className={classNames('!pl-13 rounded-sm !pr-9 transition-all md:!py-4 md:placeholder-shown:!py-4 lg:!py-4 lg:placeholder-shown:!py-4', colorScheme === 'inverted' && 'text-white')}
-              wrapperClassName={classNames(
-                'w-0 overflow-hidden transition-width',
-                isSearchOpen && 'xl:w-84 w-50'
-              )}
-              label={''}
-            />
-
-            <button
-              className={classNames(
-                'absolute right-4 top-4 transition-opacity',
-                isSearchOpen && 'opacity-0'
-              )}
-              onClick={() => setIsSearchOpen(true)}
-            >
-              <Icon name="search" />
-            </button>
-            <button
-              className={classNames(
-                'pointer-events-none absolute right-4 top-4 opacity-0 transition-opacity',
-                isSearchOpen && 'pointer-events-auto opacity-100'
-              )}
-              onClick={() => setIsSearchOpen(false)}
-            >
-              <Icon name="x" />
-            </button>
-
-            <button
-              className={classNames(
-                'transtion-opacity pointer-events-none absolute left-4 top-4 z-10 opacity-0 delay-75 xl:delay-100',
-                isSearchOpen && 'pointer-events-auto opacity-100'
-              )}
-            >
-              <Icon name="search" className="w-5" />
-            </button> */}
           </li>
           <li>
             <RegionPicker

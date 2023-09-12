@@ -9,9 +9,9 @@ import { Icon } from '@/components/ui/Icon';
 
 import { useEffect, useState } from "react";
 import { useCart, useProducts } from "medusa-react";
-import Link from 'next/link';
 import _ from 'lodash';
 import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
+import { PricedProduct } from '@medusajs/medusa/dist/types/pricing';
 
 const sortingOptions = [
   'Whatever',
@@ -75,8 +75,8 @@ const ShopPage: NextPageWithLayout = () => {
       const sortedProducts = [...(products || [])];
       sortedProducts.sort((a, b) => {
         switch (filter) {
-          case 'Newest':
-            return b.created_at?.localeCompare(a.created_at);
+          // case 'Newest':
+          //   return b.created_at?.localeCompare(a.created_at);
           case 'Lowest price':
             return (
               a.variants[0]?.prices[0]?.amount - b.variants[0]?.prices[0]?.amount
@@ -86,9 +86,9 @@ const ShopPage: NextPageWithLayout = () => {
               b.variants[0]?.prices[0]?.amount - a.variants[0]?.prices[0]?.amount
             ); 
           case 'Discount':
-            const discountA = a.discount || 0;
-            const discountB = b.discount || 0;
-            return discountB - discountA;
+            // const discountA = a.discount || 0;
+            // const discountB = b.discount || 0;
+            // return discountB - discountA;
           default:
             return 0; 
         }
@@ -115,7 +115,7 @@ const ShopPage: NextPageWithLayout = () => {
 
         <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
           
-        {filteredProducts?.map((product: any) => {
+        {filteredProducts?.map((product: PricedProduct) => {
           if (!filteredProducts) {
             return null;
           }
@@ -128,15 +128,13 @@ const ShopPage: NextPageWithLayout = () => {
               <Product
                 key={product.id}
                 className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-                title={product.title}
+                title={product.title || ""}
                 calculatedPrice={calculatedPrice}
-                discount={product.discount}
-                discountedPrice={product.discountedPrice}
-                collection={product.collection?.handle}
-                src={product.images[0]?.url}
+                src={product.images?.[0]?.url || ""}
+                collection={product.collection?.handle || ""}
                 height={3200}
                 width={2400}
-                alt={product.title}
+                alt={product.title || ""}
                 linkTo={`/product/${product.handle}`}
               />
             );

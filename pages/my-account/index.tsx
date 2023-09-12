@@ -9,31 +9,44 @@ import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/Input';
 import { SelectCountry } from '@/components/SelectCountry';
 import { useAccount } from '@/lib/context/account-context';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { sortBy } from 'lodash';
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, Field } from 'react-hook-form';
 import { Country, Region } from '@medusajs/medusa';
 import { useStore } from '@/lib/context/store-context';
 import { useRegions } from 'medusa-react';
 
-const MyAccountPage: NextPageWithLayout = () => {
-  const [address, setAddress] = useState();
-  const [details, setDetails] = useState();
-  const [postalCode, setPostalCode] = useState();
-  const [city, setCity] = useState();
+interface UpdatedAddress {
+  address_1?: string;
+  address_2: string;
+  city: string;
+  country_code?: Country;
+  postal_code: string;
+}
 
-  const [updatedAddress1, setUpdatedAddress1] = useState();
-  const [updatedAddress2, setUpdatedAddress2] = useState('');
-  const [updatedPostalCode, setUpdatedPostalCode] = useState('');
-  const [updatedCity, setUpdatedCity] = useState('');
+interface FormData {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+const MyAccountPage: NextPageWithLayout = () => {
+  const addressRef = useRef('');
+  const detailsRef = useRef('');
+  const postalCodeRef = useRef('');
+  const cityRef = useRef('');
+
+  const updatedAddress1 = useRef<string | undefined>(undefined);
+  const updatedAddress2 = useRef<string | undefined>(undefined);
+  const updatedPostalCode = useRef<string | undefined>(undefined);
+  const updatedCity = useRef<string | undefined>(undefined);
 
   const account = useAccount();
   const { cart } = useStore();
   const regions = useRegions();
 
   const allCountries = regions.regions?.flatMap((region) => region.countries);
-  
 
   const {
     handleSubmit,
@@ -50,10 +63,10 @@ const MyAccountPage: NextPageWithLayout = () => {
     setSelectedCountry(country);
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
     const response = await account.updateCustomerInfo(
-      data.firstName,
-      data.lastName,
+      data.firstName!,
+      data.lastName!,
       data.phone?.toString() || data.phone
     );
 
@@ -61,7 +74,6 @@ const MyAccountPage: NextPageWithLayout = () => {
       account.refetchCustomer();
     }
   };
-
 
   const handleAddAddress = handleSubmit(async (data) => {
     const newAddress = {
@@ -84,7 +96,7 @@ const MyAccountPage: NextPageWithLayout = () => {
 
   const handleUpdateAddress = async (
     address_id: string,
-    updatedAddress: any
+    updatedAddress: UpdatedAddress
   ) => {
     const existingAddress = account.customer?.shipping_addresses.find(
       (address) => address.id === address_id
@@ -99,13 +111,13 @@ const MyAccountPage: NextPageWithLayout = () => {
       updatedAddress.postal_code || existingAddress?.postal_code
     );
 
-    setUpdatedAddress1(undefined);
-    setUpdatedAddress2('');
-    setUpdatedPostalCode('');
-    setUpdatedCity('');
+    updatedAddress1.current = undefined;
+    updatedAddress2.current = undefined;
+    updatedPostalCode.current = undefined;
+    updatedCity.current = undefined;
   };
 
-  const handleDeleteAddress = async (addressId: any) => {
+  const handleDeleteAddress = async (addressId: string) => {
     const updatedCustomer = await account.deleteAddress(addressId);
     if (updatedCustomer) {
       account.refetchCustomer();
@@ -148,7 +160,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                 </Button>
               </Dialog.Trigger>
               <Dialog.Overlay />
-              <form onSubmit={handleSubmit(onSubmit)}>
+              <form onSubmit={() => handleSubmit(onSubmit)}>
                 <Dialog.Content>
                   <Dialog.Title>Personal information</Dialog.Title>
                   <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
@@ -164,12 +176,12 @@ const MyAccountPage: NextPageWithLayout = () => {
                         },
                       }}
                       defaultValue={account?.customer.first_name}
-                      render={({ field }: any) => (
+                      render={({ field }) => (
                         <Input
                           type="text"
                           label="First name"
                           wrapperClassName="flex-1"
-                          errorMessage={errors.firstName?.message}
+                          errorMessage={String(errors.firstName?.message)}
                           {...field}
                           // placeholder={'ex. Bruna'}
                         />
@@ -188,12 +200,12 @@ const MyAccountPage: NextPageWithLayout = () => {
                         },
                       }}
                       defaultValue={account?.customer.last_name}
-                      render={({ field }: any) => (
+                      render={({ field }) => (
                         <Input
                           type="text"
                           label="Last name"
                           wrapperClassName="flex-1"
-                          errorMessage={errors.lastName?.message}
+                          errorMessage={String(errors.lastName?.message)}
                           {...field}
                         />
                       )}
@@ -210,12 +222,13 @@ const MyAccountPage: NextPageWithLayout = () => {
                         message: 'krivi format broja mobitela',
                       },
                     }}
-                    render={({ field }: any) => (
+                    defaultValue={account?.customer.phone}
+                    render={({ field }) => (
                       <Input
                         type="text"
                         label="Phone"
                         wrapperClassName="mb-4 lg:mb-10"
-                        errorMessage={errors.phone?.message}
+                        errorMessage={String(errors.phone?.message)}
                         {...field}
                       />
                     )}
@@ -285,12 +298,13 @@ const MyAccountPage: NextPageWithLayout = () => {
                           Country
                         </li>
                         <li className="text-sm text-black">
-                          {allCountries?.find(
-                            (country) =>
-                              country?.iso_2 === address.country_code
-                          )?.display_name}
+                          {
+                            allCountries?.find(
+                              (country) =>
+                                country?.iso_2 === address.country_code
+                            )?.display_name
+                          }
                         </li>
-                        
                       </ul>
 
                       <ul className="flex-1">
@@ -370,7 +384,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                           wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
                           defaultValue={address.address_1}
                           onChange={(e: any) =>
-                            setUpdatedAddress1(e.target.value)
+                            (updatedAddress1.current = e.target.value)
                           }
                         />
                         <Input
@@ -378,7 +392,9 @@ const MyAccountPage: NextPageWithLayout = () => {
                           label="Apartment, suite, etc. (Optional)"
                           wrapperClassName="flex-1 mb-4 lg:mb-8"
                           defaultValue={address.address_2}
-                          onChange={(e) => setUpdatedAddress2(e.target.value)}
+                          onChange={(e) =>
+                            (updatedAddress2.current = e.target.value)
+                          }
                         />
                         <div className="mb-4 flex w-full gap-x-4 lg:mb-8 lg:gap-x-6">
                           <Input
@@ -387,7 +403,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                             wrapperClassName="flex-1"
                             defaultValue={address.postal_code}
                             onChange={(e: any) =>
-                              setUpdatedPostalCode(e.target.value)
+                              (updatedPostalCode.current = e.target.value)
                             }
                           />
                           <Input
@@ -395,7 +411,9 @@ const MyAccountPage: NextPageWithLayout = () => {
                             label="City"
                             wrapperClassName="flex-1"
                             defaultValue={address.city}
-                            onChange={(e) => setUpdatedCity(e.target.value)}
+                            onChange={(e) =>
+                              (updatedCity.current = e.target.value)
+                            }
                           />
                         </div>
                         <div className="flex justify-between">
@@ -405,11 +423,11 @@ const MyAccountPage: NextPageWithLayout = () => {
                               aria-label="Save changes"
                               onPress={() => {
                                 const updatedAddress = {
-                                  address_1: updatedAddress1,
-                                  address_2: updatedAddress2,
-                                  country_code: selectedCountry,
-                                  postal_code: updatedPostalCode,
-                                  city: updatedCity,
+                                  address_1: updatedAddress1.current || '',
+                                  address_2: updatedAddress2.current || '',
+                                  country_code: selectedCountry || '',
+                                  postal_code: updatedPostalCode.current  || '',
+                                  city: updatedCity.current || '',
                                 };
                                 handleUpdateAddress(address.id, updatedAddress);
 
@@ -458,34 +476,36 @@ const MyAccountPage: NextPageWithLayout = () => {
                 <Controller
                   name="address"
                   control={control}
-                  defaultValue={address}
+                  defaultValue={addressRef.current}
                   rules={{
                     required: 'unesi',
                   }}
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <Input
                       type="text"
                       label="Address"
                       wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
-                      errorMessage={errors.address?.message}
+                      errorMessage={String(errors.address?.message)}
                       {...field}
+                      onChange={(e) => (addressRef.current = e.target.value)}
                     />
                   )}
                 />
                 <Controller
                   name="details"
                   control={control}
-                  defaultValue={details}
+                  defaultValue={detailsRef.current}
                   rules={{
                     required: 'unesi',
                   }}
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <Input
                       type="text"
                       label="Apartment, suite, etc. (Optional)"
                       wrapperClassName="flex-1 mb-4 lg:mb-8"
-                      errorMessage={errors.details?.message}
+                      errorMessage={String(errors.details?.message)}
                       {...field}
+                      onChange={(e) => (detailsRef.current = e.target.value)}
                     />
                   )}
                 />
@@ -493,34 +513,38 @@ const MyAccountPage: NextPageWithLayout = () => {
                   <Controller
                     name="postalCode"
                     control={control}
-                    defaultValue={postalCode}
+                    defaultValue={postalCodeRef.current}
                     rules={{
                       required: 'unesi',
                     }}
-                    render={({ field }: any) => (
+                    render={({ field }) => (
                       <Input
                         type="number"
                         label="Postal Code"
                         wrapperClassName="flex-1"
-                        errorMessage={errors.postalCode?.message}
+                        errorMessage={String(errors.postalCode?.message)}
                         {...field}
+                        onChange={(e) =>
+                          (postalCodeRef.current = e.target.value)
+                        }
                       />
                     )}
                   />
                   <Controller
                     name="city"
                     control={control}
-                    defaultValue={city}
+                    defaultValue={cityRef.current}
                     rules={{
                       required: 'unesi',
                     }}
-                    render={({ field }: any) => (
+                    render={({ field }) => (
                       <Input
                         type="text"
                         label="City"
                         wrapperClassName="flex-1"
-                        errorMessage={errors.city?.message}
+                        errorMessage={String(errors.city?.message)}
                         {...field}
+                        onChange={(e) => (cityRef.current = e.target.value)}
                       />
                     )}
                   />

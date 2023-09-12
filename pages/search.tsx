@@ -7,7 +7,7 @@ import { Heading } from '@/components/ui/Heading';
 import { Product } from '@/components/Product';
 import DefaultLayout from '@/layouts/DefaultLayout';
 
-import Medusa from "@medusajs/medusa-js";
+import Medusa from '@medusajs/medusa-js';
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import { NextPageWithLayout } from './_app';
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
@@ -17,24 +17,23 @@ const ShopPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { title } = router.query;
 
-  const searchTerm = router.query.title as string;  
+  const [filteredProducts, setFilteredProducts] = useState([]);
+
+  const searchTerm = router.query.title as string;
 
   const fetchProducts = async (searchTerm: string) => {
     try {
       const { hits } = await medusa.products.search({ q: searchTerm });
-      console.log(hits);
-      
       return hits;
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error('Error', error);
       return [];
     }
   };
 
-  const [filteredProducts, setFilteredProducts] = useState([]);
   useEffect(() => {
     if (searchTerm) {
-      fetchProducts(searchTerm).then((data:any) => {
+      fetchProducts(searchTerm).then((data: any) => {
         setFilteredProducts(data);
       });
     }
@@ -47,10 +46,13 @@ const ShopPage: NextPageWithLayout = () => {
           <Heading size="xl6" className="text-primary">
             {title}
           </Heading>
+          <span className="ml-2 text-sm text-gray-500">
+            {filteredProducts.length} products
+          </span>
         </div>
 
         <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
-          {filteredProducts?.map((hit: any) => { 
+          {filteredProducts?.map((hit: any) => {
             if (!filteredProducts) {
               return null;
             }
@@ -62,7 +64,7 @@ const ShopPage: NextPageWithLayout = () => {
 
             return (
               <Product
-                key={hit.objectID} 
+                key={hit.objectID}
                 className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
                 title={hit.title}
                 calculatedPrice={calculatedPrice}

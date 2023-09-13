@@ -20,12 +20,14 @@ import { useAccount } from '@/lib/context/account-context';
 import { useStore } from '@/lib/context/store-context';
 import { useCart, useRegions } from 'medusa-react';
 import { AddressPayload } from '@medusajs/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import Medusa from '@medusajs/medusa-js';
 import { PricedShippingOption } from '@medusajs/medusa/dist/types/pricing';
 import { useRouter } from 'next/router';
+import BillingAddressFormComponent from '@/components/BillingAddressForm';
+import DeliveryAddressFields from '@/components/DeliveryAddress';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
@@ -233,24 +235,8 @@ const CheckoutPage: NextPageWithLayout = () => {
     const updatedBillingAddressData: typeof billingAddressData = {
       ...billingAddressData,
     };
-    updatedBillingAddressData[field] = e.target.value;
+    updatedBillingAddressData[field] = e.target?.value;
     setBillingAddressData(updatedBillingAddressData);
-  };
-
-  const newBillingAddress = () => {
-    console.log('nova');
-
-    if (cart?.id) {
-      updateCart
-        .mutateAsync({
-          billing_address: {
-            ...billingAddressData,
-          } as AddressPayload,
-        })
-        .then(({ cart }) => {
-          console.log('BILLING', cart.billing_address);
-        });
-    }
   };
 
   const updateCountry = async (payload: any) => {
@@ -363,7 +349,68 @@ const CheckoutPage: NextPageWithLayout = () => {
     } catch (e) {
       console.error('ERROR', e);
     }
+    setShowBillingAddress(false)
   };
+
+  const form = useMemo(() => (
+    <form>
+      <DeliveryAddressFields
+        cart={cart}
+        updateField={updateField}
+        errorMessage={errorMessage}
+        updateCountry={updateCountry}
+      />
+
+      <div className="my-10 flex items-start gap-1">
+        <input
+          onClick={() => setShowBillingAddress(!showBillingAddress)}
+          type="checkbox"
+          name="email"
+          id="email"
+          className="relative h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
+        />
+        <label
+          htmlFor="email"
+          className="cursor-pointer text-xs2 text-gray-400 lg:text-xs"
+        >
+          Use different billing address
+        </label>
+      </div>
+
+      {showBillingAddress && (
+        <BillingAddressFormComponent
+          cart={cart}
+          billingAddressData={billingAddressData}
+          errorMessage={errorMessage}
+          handleBillingAddressChange={handleBillingAddressChange}
+          setBillingAddressData={setBillingAddressData}
+        />
+      )}
+
+      <Button
+        size="lg"
+        className="mt-10"
+        onPress={() => {
+          setStep(3);
+          shippingMethodSelection();
+
+          if (showBillingAddress) {
+            getNewBillingAddress();
+          } else {
+            copyBillingAddress();
+          }
+        }}
+      >
+        Next
+      </Button>
+    </form>
+  ), [showBillingAddress, cart, updateField, errorMessage, updateCountry]);
+
+  console.log(cart?.billing_address);
+  console.log(showBillingAddress);
+  
+        
+
 
   return (
     <div className="flex h-full flex-col-reverse lg:flex-row">
@@ -489,234 +536,9 @@ const CheckoutPage: NextPageWithLayout = () => {
             </ul>
 
             {step === 2 ? (
-              <form>
-                <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
-                  <SelectCountry
-                    selectedCountry={cart?.region.countries.find(
-                      (x) => x.iso_2 === cart?.shipping_address?.country_code
-                    )}
-                    onCountryChange={(country: Country): void => {
-                      updateCountry(country.iso_2);
-                    }}
-                  />
-                  {errorMessage && (
-                    <span className="text-red-700">{errorMessage}</span>
-                  )}
-
-                  <div className="flex gap-x-4 lg:gap-x-12">
-                    <Input
-                      type="text"
-                      label="First name"
-                      wrapperClassName="w-full"
-                      name="first_name"
-                      onChange={(event) =>
-                        updateField(event.target.value, 'first_name')
-                      }
-                      defaultValue={cart?.shipping_address?.first_name || ''}
-                    />
-
-                    <Input
-                      type="text"
-                      label="Last name"
-                      wrapperClassName="w-full"
-                      name="last_name"
-                      onChange={(event) =>
-                        updateField(event.target.value, 'last_name')
-                      }
-                      defaultValue={cart?.shipping_address?.last_name || ''}
-                    />
-                  </div>
-
-                  <Input
-                    type="text"
-                    label="Address"
-                    name="address_1"
-                    onChange={(event) =>
-                      updateField(event.target.value, 'address_1')
-                    }
-                    defaultValue={cart?.shipping_address?.address_1 || ''}
-                  />
-
-                  <Input
-                    type="text"
-                    label="Apartment, suite, etc. (Optional)"
-                    name="address_2"
-                    onChange={(event) =>
-                      updateField(event.target.value, 'address_2')
-                    }
-                    defaultValue={cart?.shipping_address?.address_2 || ''}
-                  />
-
-                  <div className="flex gap-x-4 lg:gap-x-12">
-                    <Input
-                      type="number"
-                      label="Postal Code"
-                      wrapperClassName="w-full"
-                      name="postal_code"
-                      onChange={(event) =>
-                        updateField(event.target.value, 'postal_code')
-                      }
-                      defaultValue={cart?.shipping_address?.postal_code || ''}
-                    />
-
-                    <Input
-                      type="text"
-                      label="City"
-                      wrapperClassName="w-full"
-                      name="city"
-                      onChange={(event) =>
-                        updateField(event.target.value, 'city')
-                      }
-                      defaultValue={cart?.shipping_address?.city || ''}
-                    />
-                  </div>
-
-                  <Input
-                    type="phone"
-                    label="Phone"
-                    name="phone"
-                    onChange={(event) =>
-                      updateField(event.target.value, 'phone')
-                    }
-                    defaultValue={cart?.shipping_address?.phone || ''}
-                  />
-                </fieldset>
-
-                <div className="my-10 flex items-start gap-1">
-                  <input
-                    onClick={() => setShowBillingAddress(!showBillingAddress)}
-                    type="checkbox"
-                    name="email"
-                    id="email"
-                    className="relative h-4 w-4 shrink-0 cursor-pointer appearance-none border border-gray-400 transition-all checked:border-gray-900 checked:bg-gray-900 checked:before:absolute checked:before:left-[0.1875rem] checked:before:top-[0.1875rem] checked:before:h-[0.3125rem] checked:before:w-2 checked:before:-rotate-45 checked:before:border-b-2 checked:before:border-l-2 checked:before:border-gray-10 checked:before:content-[''] hover:border-primary hover:checked:bg-primary focus-visible:outline-0"
-                  />
-                  <label
-                    htmlFor="email"
-                    className="cursor-pointer text-xs2 text-gray-400 lg:text-xs"
-                  >
-                    Use different billing address
-                  </label>
+                  <div>
+                  {form}
                 </div>
-
-                {showBillingAddress && (
-                  <>
-                    <p className="mb-7 font-black italic text-primary">
-                      Billing details
-                    </p>
-
-                    <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
-                      <SelectCountry
-                        selectedCountry={cart?.region.countries.find(
-                          (x) => x.iso_2 === billingAddressData.country
-                        )}
-                        onCountryChange={(country: Country): void => {
-                          setBillingAddressData((prev) => ({
-                            ...prev,
-                            country: country.iso_2,
-                          }));
-                        }}
-                      />
-                      {errorMessage && (
-                        <span className="text-red-700">{errorMessage}</span>
-                      )}
-
-                      <div className="flex gap-x-4 lg:gap-x-12">
-                        <Input
-                          type="text"
-                          label="First name"
-                          wrapperClassName="w-full"
-                          name="firstName"
-                          value={billingAddressData.first_name}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'first_name')
-                          }
-                        />
-
-                        <Input
-                          type="text"
-                          label="Last name"
-                          wrapperClassName="w-full"
-                          name="lastName"
-                          value={billingAddressData.last_name}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'last_name')
-                          }
-                        />
-                      </div>
-
-                      <Input
-                        type="text"
-                        label="Address"
-                        name="address"
-                        value={billingAddressData.address_1}
-                        onChange={(e) =>
-                          handleBillingAddressChange(e, 'address_1')
-                        }
-                      />
-
-                      <Input
-                        type="text"
-                        label="Apartment, suite, etc. (Optional)"
-                        name="apartment"
-                        value={billingAddressData.address_2}
-                        onChange={(e) =>
-                          handleBillingAddressChange(e, 'address_2')
-                        }
-                      />
-
-                      <div className="flex gap-x-4 lg:gap-x-12">
-                        <Input
-                          type="number"
-                          label="Postal Code"
-                          wrapperClassName="w-full"
-                          name="postalCode"
-                          value={billingAddressData.postal_code}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'postal_code')
-                          }
-                        />
-
-                        <Input
-                          type="text"
-                          label="City"
-                          wrapperClassName="w-full"
-                          name="city"
-                          value={billingAddressData.city}
-                          onChange={(e) =>
-                            handleBillingAddressChange(e, 'city')
-                          }
-                        />
-                      </div>
-
-                      <Input
-                        type="phone"
-                        label="Phone"
-                        defaultValue="+385"
-                        name="phone"
-                        value={billingAddressData.phone}
-                        onChange={(e) => handleBillingAddressChange(e, 'phone')}
-                      />
-                    </fieldset>
-                  </>
-                )}
-
-                <Button
-                  size="lg"
-                  className="mt-10"
-                  onPress={() => {
-                    setStep(3);
-                    shippingMethodSelection();
-
-                    if (showBillingAddress) {
-                      getNewBillingAddress();
-                    } else {
-                      copyBillingAddress();
-                    }
-                  }}
-                >
-                  Next
-                </Button>
-              </form>
             ) : (
               renderAddressOrEmpty()
             )}

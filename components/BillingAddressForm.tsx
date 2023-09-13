@@ -1,26 +1,27 @@
 import React from 'react';
 import { SelectCountry } from './SelectCountry';
 import { Input } from './Input';
+import { Country } from '@medusajs/medusa';
 
-const BillingAddressFields = ({
+const BillingAddressFormComponent = ({
   cart,
   billingAddressData,
   errorMessage,
   handleBillingAddressChange,
   setBillingAddressData,
-}:any) => {
-    console.log(billingAddressData);
-    
+  showBillingAddress,
+}: any) => {
   return (
     <>
       <p className="mb-7 font-black italic text-primary">Billing details</p>
+
       <fieldset className="relative flex flex-col flex-wrap gap-y-4 lg:gap-y-8">
         <SelectCountry
-          selectedCountry={cart?.region?.countries.find(
-            (x:any) => x.iso_2 === billingAddressData.countrys
+          selectedCountry={cart?.region.countries.find(
+            (x: any) => x.iso_2 === billingAddressData?.country
           )}
-          onCountryChange={(country) => {
-            setBillingAddressData((prev:any) => ({
+          onCountryChange={(country: Country): void => {
+            setBillingAddressData((prev: any) => ({
               ...prev,
               country: country.iso_2,
             }));
@@ -34,9 +35,8 @@ const BillingAddressFields = ({
             label="First name"
             wrapperClassName="w-full"
             name="firstName"
-            onChange={(event) =>
-              handleBillingAddressChange(event.target.value, 'first_name')
-            }
+            value={billingAddressData?.first_name}
+            onChange={(e) => handleBillingAddressChange(e, 'first_name')}
           />
 
           <Input
@@ -44,9 +44,8 @@ const BillingAddressFields = ({
             label="Last name"
             wrapperClassName="w-full"
             name="lastName"
-            onChange={(event) =>
-              handleBillingAddressChange(event.target.value, 'last_name')
-            }
+            value={billingAddressData?.last_name}
+            onChange={(e) => handleBillingAddressChange(e, 'last_name')}
           />
         </div>
 
@@ -54,18 +53,16 @@ const BillingAddressFields = ({
           type="text"
           label="Address"
           name="address"
-          onChange={(event) =>
-            handleBillingAddressChange(event.target.value, 'address_1')
-          }
+          value={billingAddressData?.address_1}
+          onChange={(e) => handleBillingAddressChange(e, 'address_1')}
         />
 
         <Input
           type="text"
           label="Apartment, suite, etc. (Optional)"
           name="apartment"
-          onChange={(event) =>
-            handleBillingAddressChange(event.target.value, 'address_2')
-          }
+          value={billingAddressData?.address_2}
+          onChange={(e) => handleBillingAddressChange(e, 'address_2')}
         />
 
         <div className="flex gap-x-4 lg:gap-x-12">
@@ -74,9 +71,8 @@ const BillingAddressFields = ({
             label="Postal Code"
             wrapperClassName="w-full"
             name="postalCode"
-            onChange={(event) =>
-              handleBillingAddressChange(event.target.value, 'postal_code')
-            }
+            value={billingAddressData?.postal_code}
+            onChange={(e) => handleBillingAddressChange(e, 'postal_code')}
           />
 
           <Input
@@ -84,9 +80,8 @@ const BillingAddressFields = ({
             label="City"
             wrapperClassName="w-full"
             name="city"
-            onChange={(event) =>
-              handleBillingAddressChange(event.target.value, 'city')
-            }
+            value={billingAddressData?.city}
+            onChange={(e) => handleBillingAddressChange(e, 'city')}
           />
         </div>
 
@@ -95,13 +90,12 @@ const BillingAddressFields = ({
           label="Phone"
           defaultValue="+385"
           name="phone"
-          onChange={(event) =>
-            handleBillingAddressChange(event.target.value, 'phone')
-          }
+          value={billingAddressData?.phone}
+          onChange={(e) => handleBillingAddressChange(e, 'phone')}
         />
       </fieldset>
     </>
   );
 };
 
-export default BillingAddressFields;
+export default BillingAddressFormComponent;

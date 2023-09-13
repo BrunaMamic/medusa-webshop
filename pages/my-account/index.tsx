@@ -425,7 +425,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                                 const updatedAddress = {
                                   address_1: updatedAddress1.current || '',
                                   address_2: updatedAddress2.current || '',
-                                  country_code: selectedCountry || '',
+                                  country_code: selectedCountry as Country,
                                   postal_code: updatedPostalCode.current  || '',
                                   city: updatedCity.current || '',
                                 };

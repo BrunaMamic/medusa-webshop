@@ -25,9 +25,10 @@ const OrderReturnModal: React.FC = () => {
 
   const pathname = usePathname();
   const { customer } = useAccount();
-  const [order, setOrder] = useState<any>();
+  const [order, setOrder] = useState<Order | undefined>(undefined);
 
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<{ quantity: number, id: string }[]>([]);
+
 
   const fetchOrder = async (displayId: string, email: string) => {
     const response = await medusa.orders.lookupOrder({
@@ -54,7 +55,7 @@ const OrderReturnModal: React.FC = () => {
   const handleCreateReturn = async () => {
     try {
       const returnRequest = {
-        order_id: order.id,
+        order_id: order!.id,
         items: selectedItems.map((selectedItem) => ({
           item_id: selectedItem.id,
           quantity: selectedItem.quantity,
@@ -71,14 +72,31 @@ const OrderReturnModal: React.FC = () => {
     }
   };
 
+  // const handleCheckboxChange = (itemId: string) => {
+  //   if (selectedItems.some((item) => item.id === itemId)) {
+  //     setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
+  //   } else {
+  //     setSelectedItems([
+  //       ...selectedItems,
+  //       order.items.find((item) => item.id === itemId),
+  //     ]);
+  //   }
+  // };
+
   const handleCheckboxChange = (itemId: string) => {
-    if (selectedItems.some((item) => item.id === itemId)) {
-      setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
+    const selectedItem = order?.items.find((item) => item.id === itemId);
+  
+    if (selectedItem) {
+      if (selectedItems.some((item) => item.id === itemId)) {
+        setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
+      } else {
+        setSelectedItems([
+          ...selectedItems,
+          { quantity: selectedItem.quantity, id: selectedItem.id },
+        ]);
+      }
     } else {
-      setSelectedItems([
-        ...selectedItems,
-        order.items.find((item: any) => item.id === itemId),
-      ]);
+      console.error(`Item with ID ${itemId} not found in order.items.`);
     }
   };
 
@@ -111,7 +129,7 @@ const OrderReturnModal: React.FC = () => {
           </Dialog.Title>
           <div className="px-6">
             <ul className="mb-8 [&>li:last-child]:mb-0 [&>li:last-child]:border-b-0 [&>li:last-child]:pb-0 [&>li]:mb-4 [&>li]:border-b [&>li]:border-gray-100 [&>li]:pb-4">
-              {order?.items?.map((item: any) => (
+              {order?.items?.map((item) => (
                 <li key={item.id} className="relative flex justify-between">
                   <input
                     type="checkbox"
@@ -124,7 +142,7 @@ const OrderReturnModal: React.FC = () => {
                     onChange={() => handleCheckboxChange(item.id)}
                   />
                   <Image
-                    src={item.thumbnail}
+                    src={item.thumbnail!}
                     height={200}
                     width={150}
                     alt={item.title}
@@ -149,7 +167,7 @@ const OrderReturnModal: React.FC = () => {
                       </li>
                     </ul>
                     <span className="mt-auto block self-end">
-                      {'€'} {(item.total / 100).toFixed(2)}
+                      {'€'} {(item.total! / 100).toFixed(2)}
                     </span>
                   </div>
                 </li>
@@ -344,7 +362,7 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
             <li>
               {
                 cart?.region?.countries.find(
-                  (country: any) =>
+                  (country) =>
                     country?.iso_2 === order?.shipping_address?.country_code
                 )?.display_name
               }
@@ -377,7 +395,7 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
             <li>
               {
                 cart?.region?.countries.find(
-                  (country: any) =>
+                  (country) =>
                     country?.iso_2 === order?.billing_address?.country_code
                 )?.display_name
               }
@@ -389,13 +407,13 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
       </div>
 
       <ul className="mb-4 rounded-sm border border-gray-200 p-2 [&>li:last-child]:mb-0 [&>li:last-child]:before:hidden [&>li]:relative [&>li]:mb-4 [&>li]:p-2 [&>li]:before:absolute [&>li]:before:-bottom-2 [&>li]:before:left-0 [&>li]:before:h-[0.0625rem] [&>li]:before:w-full [&>li]:before:bg-gray-100 [&>li]:before:content-['']">
-        {order?.items?.map((item: any) => (
+        {order?.items?.map((item) => (
           <li
             key={item.id}
             className="group relative flex flex-wrap justify-between gap-8 bg-gray-30"
           >
             <Image
-              src={item.thumbnail}
+              src={item.thumbnail!}
               height={200}
               width={150}
               alt={item.title}
@@ -425,7 +443,7 @@ const MyAccountOrderSinglePage: NextPageWithLayout = () => {
                 </Tag>
 
                 <span className="mt-auto block self-end">
-                  {(item.total / 100).toFixed(2)}
+                  {(item.total! / 100).toFixed(2)}
                   {order.region?.currency_code === 'eur' ? '€' : '$'}
                 </span>
               </div>

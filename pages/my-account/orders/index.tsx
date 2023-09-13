@@ -13,11 +13,12 @@ import { useEffect, useState } from 'react';
 import { MEDUSA_BACKEND_URL, medusaClient } from '../../../lib/config';
 import Medusa from '@medusajs/medusa-js';
 import { useAccount } from '@/lib/context/account-context';
+import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
 const MyAccountOrdersPage: NextPageWithLayout = () => {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<any>([]);
   const account = useAccount();
   const customerId = account?.customer?.id;
 
@@ -48,7 +49,7 @@ const MyAccountOrdersPage: NextPageWithLayout = () => {
       {/* <p>You haven’t order anything yet.</p> */}
 
       <ul className="[&>li:last-child]:mb-0 [&>li]:mb-4">
-        {orders.map((order: any) => (
+        {orders?.map((order: { id: string | number | null | undefined; display_id: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | React.PromiseLikeOfReactNode | null | undefined; created_at: string | number | Date; items: any[]; fulfillment_status: any; }) => (
           <li key={order?.id} className="rounded-sm border border-gray-200 p-4">
             <div className="mb-8 flex flex-wrap items-start justify-between gap-6">
               <ul>
@@ -67,13 +68,13 @@ const MyAccountOrdersPage: NextPageWithLayout = () => {
                 <div className="flex p-2">
                   {order.items
                     .filter(
-                      (item: any, index: number) =>
+                      (item, index: number) =>
                         index ===
                         order.items.findIndex(
-                          (i: any) => item.title === i.title
+                          (i) => item.title === i.title
                         )
                     )
-                    .map((item: any) => (
+                    .map((item: { id: string | number | null | undefined; thumbnail: string | StaticImport; title: string; }) => (
                       <li key={item.id}>
                         <Image
                           src={item.thumbnail}

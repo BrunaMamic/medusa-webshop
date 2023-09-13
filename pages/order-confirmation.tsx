@@ -26,7 +26,7 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
 
   useEffect(() => {
     medusa.orders.retrieve(id)
-      .then(({ order }:any) => {
+      .then(({ order }) => {
         setOrderData(order);   
       })
       .catch((error) => {
@@ -67,7 +67,7 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
               {orderData?.shipping_address?.city},{' '}
               {
                 orderData?.region?.countries?.find(
-                  (country: any) =>
+                  (country) =>
                     country?.iso_2 === orderData?.shipping_address?.country_code
                 )?.display_name
               }

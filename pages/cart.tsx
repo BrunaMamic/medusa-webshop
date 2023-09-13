@@ -104,7 +104,7 @@ const CartPage: NextPageWithLayout = () => {
               <li>Subtotal:</li>
               <li className="text-black">
                 {/* {cart?.subtotal} */}
-                {(cart?.subtotal / 100).toFixed(2)}{' '}
+                {(cart?.subtotal! / 100).toFixed(2)}{' '}
                 {cart?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>
@@ -120,7 +120,7 @@ const CartPage: NextPageWithLayout = () => {
               <li>Total:</li>
               <li>
                 {/* {cart?.subtotal}  */}
-                {(cart?.subtotal / 100).toFixed(2)}{' '}
+                {(cart?.subtotal! / 100).toFixed(2)}{' '}
                 {cart?.region?.currency_code === 'eur' ? '€' : '£'}
               </li>
             </ul>

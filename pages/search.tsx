@@ -17,7 +17,8 @@ const ShopPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { title } = router.query;
 
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState<any>([]);
+
 
   const searchTerm = router.query.title as string;
 
@@ -33,7 +34,7 @@ const ShopPage: NextPageWithLayout = () => {
 
   useEffect(() => {
     if (searchTerm) {
-      fetchProducts(searchTerm).then((data: any) => {
+      fetchProducts(searchTerm).then((data:any) => {
         setFilteredProducts(data);
       });
     }
@@ -52,7 +53,7 @@ const ShopPage: NextPageWithLayout = () => {
         </div>
 
         <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
-          {filteredProducts?.map((hit: any) => {
+          {filteredProducts?.map((hit:any) => {
             if (!filteredProducts) {
               return null;
             }

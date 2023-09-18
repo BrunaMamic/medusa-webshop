@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SelectCountry } from './SelectCountry';
 import { Input } from './Input';
 import { Country } from '@medusajs/medusa';
+import { Button } from './ui/Button';
 
 const BillingAddressFormComponent = ({
   cart,
@@ -9,8 +10,20 @@ const BillingAddressFormComponent = ({
   errorMessage,
   handleBillingAddressChange,
   setBillingAddressData,
-  showBillingAddress,
+  setShowBillingForm,
+  updateCartBillingAddress,
+  copyBillingAddressToCustomer
 }: any) => {
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+
+  const handleSave = async () => {
+    await updateCartBillingAddress(billingAddressData);
+    await copyBillingAddressToCustomer( billingAddressData);
+    setShowBillingForm(false)
+
+    setIsFormSubmitted(true);
+  };
+
   return (
     <>
       <p className="mb-7 font-black italic text-primary">Billing details</p>
@@ -93,6 +106,32 @@ const BillingAddressFormComponent = ({
           value={billingAddressData?.phone}
           onChange={(e) => handleBillingAddressChange(e, 'phone')}
         />
+
+        {/* {isFormSubmitted ? (
+          <div>
+            <ul>
+              <li>{cart?.billing_address?.first_name} {cart?.billing_address?.last_name}</li>
+              <li>{cart?.billing_address?.address_1}, {cart?.billing_address?.postal_code} {cart?.billing_address?.city}, {cart?.region?.countries.find((country: Country) => country?.iso_2 === cart?.shipping_address?.country_code)?.display_name}</li>
+              <li>{cart?.billing_address?.phone}</li>
+            </ul>
+          </div>
+        ) : (
+          <div>
+            <ul>
+              <li>{cart?.delivery_address?.first_name} {cart?.delivery_address?.last_name}</li>
+              <li>{cart?.delivery_address?.address_1}, {cart?.delivery_address?.postal_code} {cart?.delivery_address?.city}, {cart?.region?.countries.find((country: Country) => country?.iso_2 === cart?.shipping_address?.country_code)?.display_name}</li>
+              <li>{cart?.delivery_address?.phone}</li>
+            </ul>
+          </div>
+        )} */}
+
+        <Button
+          size="lg"
+          className="mt-10"
+          onPress={handleSave}
+        >
+          Save
+        </Button>
       </fieldset>
     </>
   );

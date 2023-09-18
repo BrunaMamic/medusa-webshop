@@ -2,8 +2,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/Input';
 import { Heading } from '@/components/ui/Heading';
+import { useNotification } from '@/lib/context/notification-context';
+import { useState } from 'react';
 
 export const Footer = () => {
+  const showNotification = useNotification();
+  const [email, setEmail] = useState('');
   return (
     <footer className="bg-gray-20 pb-6 text-primary">
       <div className="border-y border-primary pb-18 pt-17">
@@ -26,9 +30,22 @@ export const Footer = () => {
               label="Your email"
               wrapperClassName="flex-1 mb-5 md:mb-0 lg:mb-0"
               className="border-primary"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
 
-            <Button size="lg">Subscribe</Button>
+            <Button
+              size="lg"
+              onPress={() => (
+                showNotification(
+                  `Thank you for subscribing! Your email is ${email} `,
+                  'success'
+                ),
+                setEmail('')
+              )}
+            >
+              Subscribe
+            </Button>
           </div>
         </div>
       </div>

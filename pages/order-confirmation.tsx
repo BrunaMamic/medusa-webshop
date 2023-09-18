@@ -23,6 +23,8 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
   
   
   const [orderData, setOrderData] = useState<Order | undefined>(undefined);
+  console.log(orderData);
+  
 
   useEffect(() => {
     medusa.orders.retrieve(id)

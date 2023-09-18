@@ -9,12 +9,19 @@ import { QuantityInput } from '@/components/ui/QuantityInput';
 import { useCart, useProducts } from 'medusa-react';
 import { useStore } from '@/lib/context/store-context';
 import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
+import algoliarecommend from '@algolia/recommend';
+import { Product } from '@/components/Product';
+import { PricedProduct } from '@medusajs/medusa/dist/types/pricing';
+import RelatedProducts from '@/components/RelatedProducts';
+
+import { useNotification } from '@/lib/context/notification-context';
 
 const ProductSinglePage = ({ product }: any) => {
   const router = useRouter();
   const { products, isLoading } = useProducts({
     handle: router.query.handle as string,
   });
+
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
   const [selectedOptions, setSelectedOptions] = useState({
@@ -24,6 +31,9 @@ const ProductSinglePage = ({ product }: any) => {
   });
   const [matchingVariants, setMatchingVariants] = useState<any>([]);
   const [isAddToCartEnabled, setIsAddToCartEnabled] = useState(false);
+
+  const showNotification = useNotification();
+
 
   //CART
   const { cart } = useCart();
@@ -38,6 +48,7 @@ const ProductSinglePage = ({ product }: any) => {
         variantId: matchingVariant?.id as string,
         quantity: selectedOptions.quantity,
       });
+      showNotification(`Added ${selectedOptions.quantity}x ${products?.[0].title} to cart!`, 'success');
     }
   };
 
@@ -118,6 +129,34 @@ const ProductSinglePage = ({ product }: any) => {
       return colorOption && sizeOption;
     });
   };
+
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  console.log(relatedProducts);
+
+  const algoliaClient = algoliarecommend(
+    '2L5TYYBU6R',
+    'a2e63622dcbc6590e64f68049796773a'
+  );
+
+  const fetchRelatedProducts = async () => {
+    try {
+      const results = await algoliaClient.getRelatedProducts([
+        {
+          indexName: 'products',
+          objectID: products?.[0].id || '',
+        },
+      ]);
+      setRelatedProducts(results.results[0].hits as any);
+    } catch (error) {
+      console.error('Error fetching related products:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (products) {
+      fetchRelatedProducts();
+    }
+  }, [products]);
 
   return products?.[0] ? (
     <main className="group flex grid-cols-12 flex-col-reverse px-4 py-8 sm:px-24 lg:grid lg:pb-36 lg:pl-0 lg:pt-15 xl:pl-24">
@@ -231,8 +270,13 @@ const ProductSinglePage = ({ product }: any) => {
           ADD
         </Button>
 
-        <p className="text-gray-300">Estimate delivery 2-3 days</p>
+        {/* <p className="text-gray-300">Estimate delivery 2-3 days</p> */}
+        <div className="mt-4 lg:mt-0 lg:flex lg:flex-col">
+      <div className="lg:hidden">
       </div>
+      <RelatedProducts products={relatedProducts} />
+    </div>
+  </div>
     </main>
   ) : null;
 };

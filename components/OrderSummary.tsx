@@ -26,11 +26,13 @@ const OrderSummary = ({ setCardAdded }: any) => {
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
   const { cart } = useCart();
 
-  const handleApplyDiscount = async () => {
+  const handleApplyDiscount = async () => {    
     try {
       await medusa.carts.update(cart?.id || '', {
         discounts: [{ code: discountCode }],
       });
+      console.log(discountApplied);
+      
 
       setDiscountApplied(true);
       setInvalidDiscount(false);

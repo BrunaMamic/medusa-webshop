@@ -5,13 +5,14 @@ import localFont from 'next/font/local';
 
 import './globals.css';
 
-import { MedusaProvider, CartProvider } from "medusa-react"
-import { QueryClient } from "@tanstack/react-query"
-import { AccountProvider } from "../lib/context/account-context"
+import { MedusaProvider, CartProvider } from 'medusa-react';
+import { QueryClient } from '@tanstack/react-query';
+import { AccountProvider } from '../lib/context/account-context';
 import { StoreProvider } from '@/lib/context/store-context';
 import { CartDropdownProvider } from '@/lib/context/cart-dropdown-context';
+import { NotificationProvider } from '@/lib/context/notification-context';
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 const monaSans = localFont({
   src: [
@@ -72,22 +73,22 @@ export default function MyApp({ Component, pageProps }: AppPropsWithLayout) {
 
   return (
     <div className={`${monaSans.className}`}>
-      <MedusaProvider 
-        queryClientProviderProps={{ client: queryClient }}
-        baseUrl="http://localhost:9000">
+      <NotificationProvider>
+        <MedusaProvider
+          queryClientProviderProps={{ client: queryClient }}
+          baseUrl="http://localhost:9000"
+        >
           <CartDropdownProvider>
-          <CartProvider>
-            <StoreProvider>
-              <AccountProvider>
-                {getLayout(<Component {...pageProps} />)}
-              </AccountProvider>
-            </StoreProvider>  
-          </CartProvider>  
-
+            <CartProvider>
+              <StoreProvider>
+                <AccountProvider>
+                  {getLayout(<Component {...pageProps} />)}
+                </AccountProvider>
+              </StoreProvider>
+            </CartProvider>
           </CartDropdownProvider>
-         
-      </MedusaProvider>
-      
+        </MedusaProvider>
+      </NotificationProvider>
     </div>
   );
 }

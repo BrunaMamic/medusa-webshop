@@ -7,9 +7,8 @@ import { Heading } from '@/components/ui/Heading';
 import { Product } from '@/components/Product';
 import { Icon } from '@/components/ui/Icon';
 
-import { useEffect, useState } from "react";
-import { useCart, useProducts } from "medusa-react";
-import _ from 'lodash';
+import { useEffect, useState } from 'react';
+import { useCart, useProducts } from 'medusa-react';
 import { getPriceByCurrency } from '@/utils/getPriceByCurrency';
 import { PricedProduct } from '@medusajs/medusa/dist/types/pricing';
 
@@ -64,9 +63,13 @@ const ShopFilter = ({
 
 const ShopPage: NextPageWithLayout = () => {
   const { products, isLoading } = useProducts();
-  const {cart} = useCart()
+  const { cart } = useCart();
   const [selectedFilter, setSelectedFilter] = React.useState('Whatever');
-  const [filteredProducts, setFilteredProducts] = React.useState(products);
+  const [filteredProducts, setFilteredProducts] = React.useState<PricedProduct[]>(
+    products ?? []
+  );
+  const [visibleProducts, setVisibleProducts] = React.useState<number>(4); 
+  const productsPerPage = 4; 
 
   const applySorting = (filter: string) => {
     if (filter === 'Whatever') {
@@ -79,22 +82,30 @@ const ShopPage: NextPageWithLayout = () => {
           //   return b.created_at?.localeCompare(a.created_at);
           case 'Lowest price':
             return (
-              a.variants[0]?.prices[0]?.amount - b.variants[0]?.prices[0]?.amount
+              a.variants[0]?.prices[0]?.amount -
+              b.variants[0]?.prices[0]?.amount
             );
           case 'Highest price':
             return (
-              b.variants[0]?.prices[0]?.amount - a.variants[0]?.prices[0]?.amount
-            ); 
+              b.variants[0]?.prices[0]?.amount -
+              a.variants[0]?.prices[0]?.amount
+            );
           case 'Discount':
             // const discountA = a.discount || 0;
             // const discountB = b.discount || 0;
             // return discountB - discountA;
           default:
-            return 0; 
+            return 0;
         }
       });
       setFilteredProducts(sortedProducts);
     }
+  };
+
+  const loadMoreProducts = () => {
+    setVisibleProducts((prevVisibleProducts) =>
+      prevVisibleProducts + productsPerPage
+    );
   };
 
   useEffect(() => {
@@ -109,41 +120,48 @@ const ShopPage: NextPageWithLayout = () => {
             Shop
           </Heading>
 
-          <ShopFilter selectedFilter={selectedFilter}
-          setSelectedFilter={setSelectedFilter}/>
+          <ShopFilter
+            selectedFilter={selectedFilter}
+            setSelectedFilter={setSelectedFilter}
+          />
         </div>
 
         <div className="grid grid-cols-12 gap-y-8 md:gap-x-12">
-          
-        {filteredProducts?.map((product: PricedProduct) => {
-          if (!filteredProducts) {
-            return null;
-          }
-          const calculatedPrice = getPriceByCurrency(
-            product.variants[0].prices,
-            cart?.region?.currency_code || '', 1
-          );
+          {filteredProducts?.slice(0, visibleProducts).map((product: PricedProduct) => {
+            if (!filteredProducts) {
+              return null;
+            }
+            const calculatedPrice = getPriceByCurrency(
+              product.variants[0].prices,
+              cart?.region?.currency_code || '',
+              1
+            );
 
             return (
               <Product
                 key={product.id}
                 className="col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3"
-                title={product.title || ""}
+                title={product.title || ''}
                 calculatedPrice={calculatedPrice}
-                src={product.images?.[0]?.url || ""}
-                collection={product.collection?.handle || ""}
+                src={product.images?.[0]?.url || ''}
+                collection={product.collection?.handle || ''}
                 height={3200}
                 width={2400}
-                alt={product.title || ""}
+                alt={product.title || ''}
                 linkTo={`/product/${product.handle}`}
               />
             );
           })}
         </div>
 
-        <button className="relative mx-auto mt-9 block transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2">
-          There is more
-        </button>
+        {visibleProducts < filteredProducts?.length && (
+          <button
+            className="relative mx-auto mt-9 block transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
+            onClick={loadMoreProducts}
+          >
+            There is more
+          </button>
+        )}
       </main>
     </>
   );

@@ -32,10 +32,14 @@ interface FormData {
 }
 
 const MyAccountPage: NextPageWithLayout = () => {
-  const addressRef = useRef('');
-  const detailsRef = useRef('');
-  const postalCodeRef = useRef('');
-  const cityRef = useRef('');
+  // const addressRef = useRef('');
+  // const detailsRef = useRef('');
+  // const postalCodeRef = useRef('');
+  // const cityRef = useRef('');
+  const [address, setAddress] = useState('');
+  const [details, setDetails] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [city, setCity] = useState('');
 
   const updatedAddress1 = useRef<string | undefined>(undefined);
   const updatedAddress2 = useRef<string | undefined>(undefined);
@@ -79,11 +83,11 @@ const MyAccountPage: NextPageWithLayout = () => {
     const newAddress = {
       first_name: account.customer?.first_name,
       last_name: account.customer?.last_name,
-      address_1: data.address,
-      address_2: data.details,
-      city: data.city,
+      address_1: address,
+      address_2: details,
+      city:city,
       country_code: selectedCountry?.iso_2,
-      postal_code: data.postalCode,
+      postal_code: postalCode,
       phone: account.customer?.phone,
       company: 'Wyman LLC',
       province: 'Georgia',
@@ -426,7 +430,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                                   address_1: updatedAddress1.current || '',
                                   address_2: updatedAddress2.current || '',
                                   country_code: selectedCountry as Country,
-                                  postal_code: updatedPostalCode.current  || '',
+                                  postal_code: updatedPostalCode.current || '',
                                   city: updatedCity.current || '',
                                 };
                                 handleUpdateAddress(address.id, updatedAddress);
@@ -476,7 +480,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                 <Controller
                   name="address"
                   control={control}
-                  defaultValue={addressRef.current}
+                  defaultValue={address}
                   rules={{
                     required: 'unesi',
                   }}
@@ -485,16 +489,20 @@ const MyAccountPage: NextPageWithLayout = () => {
                       type="text"
                       label="Address"
                       wrapperClassName="flex-1 mb-4 lg:mb-8 mt-8"
-                      errorMessage={String(errors.address?.message)}
+                      // errorMessage={(errors.address?.message)}
                       {...field}
-                      onChange={(e) => (addressRef.current = e.target.value)}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setAddress(e.target.value);
+                      }}
                     />
+                    
                   )}
                 />
                 <Controller
                   name="details"
                   control={control}
-                  defaultValue={detailsRef.current}
+                  defaultValue={details}
                   rules={{
                     required: 'unesi',
                   }}
@@ -503,9 +511,12 @@ const MyAccountPage: NextPageWithLayout = () => {
                       type="text"
                       label="Apartment, suite, etc. (Optional)"
                       wrapperClassName="flex-1 mb-4 lg:mb-8"
-                      errorMessage={String(errors.details?.message)}
+                      // errorMessage={String(errors.details?.message)}
                       {...field}
-                      onChange={(e) => (detailsRef.current = e.target.value)}
+                      onChange={(e) => {
+                        field.onChange(e); 
+                        setDetails(e.target.value); 
+                      }}
                     />
                   )}
                 />
@@ -513,7 +524,7 @@ const MyAccountPage: NextPageWithLayout = () => {
                   <Controller
                     name="postalCode"
                     control={control}
-                    defaultValue={postalCodeRef.current}
+                    defaultValue={postalCode}
                     rules={{
                       required: 'unesi',
                     }}
@@ -522,18 +533,19 @@ const MyAccountPage: NextPageWithLayout = () => {
                         type="number"
                         label="Postal Code"
                         wrapperClassName="flex-1"
-                        errorMessage={String(errors.postalCode?.message)}
+                        // errorMessage={String(errors.postalCode?.message)}
                         {...field}
-                        onChange={(e) =>
-                          (postalCodeRef.current = e.target.value)
-                        }
+                        onChange={(e) => {
+                          field.onChange(e); 
+                          setPostalCode(e.target.value);
+                        }}
                       />
                     )}
                   />
                   <Controller
                     name="city"
                     control={control}
-                    defaultValue={cityRef.current}
+                    defaultValue={city}
                     rules={{
                       required: 'unesi',
                     }}
@@ -542,9 +554,12 @@ const MyAccountPage: NextPageWithLayout = () => {
                         type="text"
                         label="City"
                         wrapperClassName="flex-1"
-                        errorMessage={String(errors.city?.message)}
+                        // errorMessage={String(errors.city?.message)}
                         {...field}
-                        onChange={(e) => (cityRef.current = e.target.value)}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setCity(e.target.value); 
+                        }}
                       />
                     )}
                   />

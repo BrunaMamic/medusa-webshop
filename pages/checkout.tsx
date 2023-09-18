@@ -51,6 +51,8 @@ const CheckoutPage: NextPageWithLayout = () => {
     phone: '',
     country: account.customer?.shipping_addresses[0].country_code,
   });
+  
+  const [showBillingForm, setShowBillingForm] = React.useState(false);
 
   const router = useRouter();
   const { cart, resetCart, countryCode, addEmail } = useStore();
@@ -273,6 +275,40 @@ const CheckoutPage: NextPageWithLayout = () => {
       return null;
     }
   };
+  
+  const copyBillingAddressToCustomer = async (billingAddressData:any) => {
+    const customerId = account.customer?.id as string
+    // console.log(customerId);
+    
+    try {
+      const customer = await medusa.customers.retrieve({ id: customerId });
+
+    if (!customer) {
+      console.error('Customer not found');
+      return;
+    }
+    console.log(customer);
+    
+    const updatedCustomer = await medusa.customers.update({
+      billing_address: {
+        first_name: billingAddressData.first_name,
+        last_name: billingAddressData.last_name,
+        address_1: billingAddressData.address_1,
+        address_2: billingAddressData.address_2,
+        city: billingAddressData.city,
+        country_code: billingAddressData.country_code,
+        province: billingAddressData.province,
+        postal_code: billingAddressData.postal_code,
+        phone: billingAddressData.phone,
+      },
+    });
+    
+      console.log('Billing address copied to customer:', updatedCustomer.customer);
+    } catch (error) {
+      console.error('Error copying billing address to customer:', error);
+    }
+  };
+
 
   const updateField = async (value: string, key: string) => {
     try {
@@ -331,7 +367,7 @@ const CheckoutPage: NextPageWithLayout = () => {
           updateCountry={updateCountry}
         />
 
-        <div className="my-10 flex items-start gap-1">
+        {/* <div className="my-10 flex items-start gap-1">
           <input
             onClick={() => setShowBillingAddress(!showBillingAddress)}
             type="checkbox"
@@ -345,9 +381,9 @@ const CheckoutPage: NextPageWithLayout = () => {
           >
             Use different billing address
           </label>
-        </div>
+        </div> */}
 
-        {showBillingAddress && (
+        {/* {showBillingAddress && (
           <BillingAddressFormComponent
             cart={cart}
             billingAddressData={billingAddressData}
@@ -355,7 +391,7 @@ const CheckoutPage: NextPageWithLayout = () => {
             handleBillingAddressChange={handleBillingAddressChange}
             setBillingAddressData={setBillingAddressData}
           />
-        )}
+        )} */}
 
         <Button
           size="lg"
@@ -363,12 +399,13 @@ const CheckoutPage: NextPageWithLayout = () => {
           onPress={() => {
             setStep(3);
             shippingMethodSelection();
+            copyBillingAddress();
 
-            if (showBillingAddress) {
-              getNewBillingAddress();
-            } else {
-              copyBillingAddress();
-            }
+            // if (showBillingForm) {
+            //   getNewBillingAddress();
+            // } else {
+            //   copyBillingAddress();
+            // }
           }}
         >
           Next
@@ -615,29 +652,50 @@ const CheckoutPage: NextPageWithLayout = () => {
                     <ul className="flex justify-between">
                       <li>Billing address</li>
                       <li>
-                        <button className="relative text-black transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2">
-                          Change
-                        </button>
+                        {!showBillingForm && (
+                          <button
+                            className="relative text-black transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
+                            onClick={() => setShowBillingForm(true) }
+                          >
+                            Change
+                          </button>
+                        )}
                       </li>
                     </ul>
                   </li>
-                  <li>
-                    {cart?.billing_address?.first_name}{' '}
-                    {cart?.billing_address?.last_name}
-                  </li>
-                  <li>
-                    {cart?.billing_address?.address_1},{' '}
-                    {cart?.billing_address?.postal_code}{' '}
-                    {cart?.billing_address?.city},{' '}
-                    {
-                      cart?.region?.countries.find(
-                        (country: Country) =>
-                          country?.iso_2 ===
-                          cart?.shipping_address?.country_code
-                      )?.display_name
-                    }
-                  </li>
-                  <li>{cart?.billing_address?.phone}</li>
+
+                  {showBillingForm ? (
+                    <BillingAddressFormComponent
+                      cart={cart}
+                      billingAddressData={billingAddressData}
+                      errorMessage={errorMessage}
+                      handleBillingAddressChange={handleBillingAddressChange}
+                      setBillingAddressData={setBillingAddressData}
+                      setShowBillingForm={setShowBillingForm}
+                      updateCartBillingAddress={getNewBillingAddress}
+                      copyBillingAddressToCustomer={copyBillingAddressToCustomer}
+                    />
+                  ) : (
+                    <ul>
+                      <li>
+                        {cart?.billing_address?.first_name}{' '}
+                        {cart?.billing_address?.last_name}
+                      </li>
+                      <li>
+                        {cart?.billing_address?.address_1},{' '}
+                        {cart?.billing_address?.postal_code}{' '}
+                        {cart?.billing_address?.city},{' '}
+                        {
+                          cart?.region?.countries.find(
+                            (country: Country) =>
+                              country?.iso_2 ===
+                              cart?.shipping_address?.country_code
+                          )?.display_name
+                        }
+                      </li>
+                      <li>{cart?.billing_address?.phone}</li>
+                    </ul>
+                  )}
                 </ul>
 
                 <ul className="[&>li:last-child]:mb-0 [&>li]:mb-2">
@@ -675,9 +733,7 @@ const CheckoutPage: NextPageWithLayout = () => {
       </div>
 
       <ul className="top-0 bg-gray-50 lg:sticky lg:h-screen lg:w-1/2 xl:w-[45%]">
-        <OrderSummary
-          setCardAdded={setCardAdded}
-        />
+        <OrderSummary setCardAdded={setCardAdded} />
       </ul>
     </div>
   );

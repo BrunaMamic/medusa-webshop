@@ -35,6 +35,8 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
         console.error('Error', error);
       });
   }, [id]);
+  console.log(orderData);
+  
   
   return (
     <main className="grid-cols-12 px-4 py-10 md:px-24 lg:grid lg:px-0 lg:pb-50 lg:pt-19">

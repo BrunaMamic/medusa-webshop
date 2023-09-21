@@ -1,8 +1,14 @@
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import Medusa from '@medusajs/medusa-js';
-import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import {
+  CardElement,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from '@stripe/react-stripe-js';
 import router from 'next/router';
 import { Button } from './Button';
+import { StripeCardElement } from '@stripe/stripe-js';
 
 export default function Form({ clientSecret, cartId, handlePlaceOrder }: any) {
   const stripe = useStripe();
@@ -25,6 +31,12 @@ export default function Form({ clientSecret, cartId, handlePlaceOrder }: any) {
       return;
     }
 
+    const {error: submitError} = await elements.submit();
+  if (submitError) {
+    console.log(submitError);
+    return;
+  }
+
     const cardElement = elements.getElement(CardElement);
     const billingDetails = {
       name: `${firstName} ${lastName}`,
@@ -38,14 +50,14 @@ export default function Form({ clientSecret, cartId, handlePlaceOrder }: any) {
     };
 
     try {
-      const { paymentIntent, error } = await stripe.confirmCardPayment(
+      const { paymentIntent, error } = await stripe.confirmPayment({
+        elements,
         clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: billingDetails,
-          },
-        }
+        redirect: 'if_required',
+        confirmParams: {
+          return_url: 'https://example.com/order/123/complete',
+        },
+      }
       );
 
       if (error) {
@@ -69,7 +81,8 @@ export default function Form({ clientSecret, cartId, handlePlaceOrder }: any) {
 
   return (
     <form>
-      <CardElement />
+      {/* <CardElement /> */}
+      <PaymentElement />
       <Button
         size="lg"
         className="mt-10 w-full"

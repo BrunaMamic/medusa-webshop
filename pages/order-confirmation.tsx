@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import axios from 'axios';
 
 import type { NextPageWithLayout } from '@/pages/_app';
 import DefaultLayout from '@/layouts/DefaultLayout';
@@ -20,22 +21,25 @@ const OrderConfirmationPage: NextPageWithLayout = () => {
   const { cart } = useStore();
   const router = useRouter();
   const { id } = router.query as { id: string };
+  console.log(id);
+  
   
   
   const [orderData, setOrderData] = useState<Order | undefined>(undefined);
-  console.log(orderData);
-  
 
   useEffect(() => {
-    medusa.orders.retrieve(id)
-      .then(({ order }) => {
-        setOrderData(order);   
+    axios
+      .get(`http://localhost:9000/store/order-confirmation/${id}`)
+      .then((response) => {        
+        const { order } = response.data;
+        setOrderData(order);
+        console.log(response);
+        console.log(order);
       })
       .catch((error) => {
-        console.error('Error', error);
+        console.error('Error:', error);
       });
   }, [id]);
-  console.log(orderData);
   
   
   return (

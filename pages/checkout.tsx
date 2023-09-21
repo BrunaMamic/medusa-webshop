@@ -66,6 +66,10 @@ const CheckoutPage: NextPageWithLayout = () => {
   const { cart, resetCart, countryCode, addEmail } = useStore();
   const { updateCart, setCart } = useCart();
 
+  const [options, setOptions] = useState();
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<string>('');
+
   const [shippingOptions, setShippingOptions] = React.useState<
     PricedShippingOption[] | undefined
   >();
@@ -105,21 +109,32 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  const [clientSecret, setClientSecret] = useState<string>();
+  const [clientSecret, setClientSecret] = useState<string | undefined>();
 
   const createPaymentSession = (cartId: string) => {
     medusa.carts.createPaymentSessions(cart?.id!).then(({ cart }) => {
-      const isStripeAvailable = cart.payment_sessions?.some(
-        (session) => session.provider_id === 'stripe'
+      const selectedProviderId =
+        selectedPaymentMethod === 'paymentCard' ? 'stripe' : 'manual';
+      const isPaymentSessionAvailable = cart.payment_sessions?.some(
+        (session) => session.provider_id === selectedProviderId
       );
-      if (!isStripeAvailable) {
+      console.log(selectedProviderId);
+      console.log(isPaymentSessionAvailable);
+
+      if (!isPaymentSessionAvailable) {
         return;
       }
 
-      // select stripe payment session
+      if (selectedPaymentMethod === 'stripe') {
+        console.log('stripe');
+      } else {
+        console.log('manual');
+      }
+
+      // Select the payment session based on the user's choice
       medusa.carts
         .setPaymentSession(cart.id, {
-          provider_id: 'stripe',
+          provider_id: selectedProviderId,
         })
         .then(({ cart }) => {
           const clientSecret = cart?.payment_session?.data
@@ -127,14 +142,13 @@ const CheckoutPage: NextPageWithLayout = () => {
           setClientSecret(clientSecret);
         });
     });
-    // if (cartId) {
-    //   medusa.carts
-    //     .createPaymentSessions(cartId)
-    //     .then(({ cart }) => {})
-    //     .catch((error) => {
-    //       console.error('Error', error);
-    //     });
-    // }
+    setOptions({
+      clientSecret: clientSecret,
+      mode: 'payment',
+      currency: cart?.region?.currency_code,
+      amount: cart?.total,
+      capture_method: 'automatic',
+    });
   };
 
   const onExpDateChange = (event: any) => {
@@ -193,7 +207,7 @@ const CheckoutPage: NextPageWithLayout = () => {
     }
   };
 
-  console.log(cart);
+  console.log(cart?.payment_session?.provider_id);
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
@@ -356,22 +370,21 @@ const CheckoutPage: NextPageWithLayout = () => {
   };
 
   const handlePlaceOrder = async () => {
-    // try {
-    //   // const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
+    try {
+      const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
-    //   // const { type, data } = await medusa.carts.complete(cart?.id || '');
-    //   // console.log('Before router.push');
-    //   // router.push({
-    //   //   pathname: '/order-confirmation',
-    //   //   query: { id: data.id },
-    //   // });
-    //   // console.log('After router.push');
-    // } catch (error) {
-    //   console.error('Error:', error);
-    // }
+      const { type, data } = await medusa.carts.complete(cart?.id || '');
+      console.log('Before router.push');
+      router.push({
+        pathname: '/order-confirmation',
+        query: { id: data.id },
+      });
+      console.log('After router.push');
+    } catch (error) {
+      console.error('Error:', error);
+    }
     resetCart();
   };
-  
 
   const getNewBillingAddress = async () => {
     try {
@@ -452,12 +465,7 @@ const CheckoutPage: NextPageWithLayout = () => {
   );
 
   return (
-    <Elements
-      stripe={stripePromise}
-      options={{
-        clientSecret,
-      }}
-    >
+    <Elements stripe={stripePromise} options={options}>
       <div className="flex h-full flex-col-reverse lg:flex-row">
         <div className="px-4 pb-10 pt-6 lg:w-1/2 lg:px-12 xl:w-[55%] xl:px-24">
           <Link href="/" className="mb-14 hidden lg:inline-block">
@@ -750,6 +758,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                         id="paymentCard"
                         className="peer hidden"
                         value="paymentCard"
+                        onChange={() => setSelectedPaymentMethod('manual')}
                       />
                       <label
                         htmlFor="paymentCard"
@@ -769,6 +778,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                         id="paymentManual"
                         className="peer hidden"
                         value="paymentManual"
+                        onChange={() => setSelectedPaymentMethod('stripe')}
                       />
                       <label
                         htmlFor="paymentManual"
@@ -781,13 +791,15 @@ const CheckoutPage: NextPageWithLayout = () => {
                       </label>
                     </li>
                   </ul>
-                  <div>
-                    <Form
-                      clientSecret={clientSecret}
-                      cartId={cart?.id}
-                      handlePlaceOrder={handlePlaceOrder}
-                    />
-                  </div>
+                  {selectedPaymentMethod === 'stripe' && (
+                    <div>
+                      <Form
+                        clientSecret={clientSecret}
+                        cartId={cart?.id}
+                        handlePlaceOrder={handlePlaceOrder}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </li>

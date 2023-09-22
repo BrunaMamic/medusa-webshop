@@ -149,6 +149,7 @@ const ShopPage: NextPageWithLayout = () => {
                 width={2400}
                 alt={product.title || ''}
                 linkTo={`/product/${product.handle}`}
+                discountedPrice={product.variants[0].calculated_price as number}
               />
             );
           })}

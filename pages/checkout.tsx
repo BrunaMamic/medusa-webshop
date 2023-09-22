@@ -35,11 +35,13 @@ import { Elements } from '@stripe/react-stripe-js';
 import Form from '../components/ui/Form';
 import { loadStripe } from '@stripe/stripe-js';
 import { unknown } from 'zod';
+import Stripe from 'stripe';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 const stripePromise = loadStripe(
   'pk_test_51NrxZwKjuX4Edlrbp2SVaajF5HrAqXnAwzVlk45AVaVeVpEOFqsPgxUMMGuuM3cIf6ZRT4qcM35PAbClwa3Yro9F00VLZ3MCVf'
 );
+
 
 const CheckoutPage: NextPageWithLayout = () => {
   const [step, setStep] = React.useState(1);
@@ -110,46 +112,44 @@ const CheckoutPage: NextPageWithLayout = () => {
   };
 
   const [clientSecret, setClientSecret] = useState<string | undefined>();
+  console.log(clientSecret);
+  
 
-  const createPaymentSession = (cartId: string) => {
-    medusa.carts.createPaymentSessions(cart?.id!).then(({ cart }) => {
-      const selectedProviderId =
-        selectedPaymentMethod === 'paymentCard' ? 'stripe' : 'manual';
+  const createPaymentSession = (cartId: string, selectedProviderId: string) => {
+    medusa.carts.createPaymentSessions(cartId).then(({ cart }) => {
       const isPaymentSessionAvailable = cart.payment_sessions?.some(
         (session) => session.provider_id === selectedProviderId
       );
-      console.log(selectedProviderId);
-      console.log(isPaymentSessionAvailable);
-
+  
       if (!isPaymentSessionAvailable) {
         return;
       }
-
-      if (selectedPaymentMethod === 'stripe') {
-        console.log('stripe');
-      } else {
-        console.log('manual');
-      }
-
-      // Select the payment session based on the user's choice
+  
+      const clientSecret = cart?.payment_session?.data.client_secret as string;
+      console.log(clientSecret);
+      
+  
       medusa.carts
         .setPaymentSession(cart.id, {
           provider_id: selectedProviderId,
         })
         .then(({ cart }) => {
-          const clientSecret = cart?.payment_session?.data
-            .client_secret as string;
-          setClientSecret(clientSecret);
+          setClientSecret(cart?.payment_session?.data.client_secret as string);
+          setCart(cart);
+  
+          console.log('Payment session updated:', selectedProviderId);
         });
     });
     setOptions({
-      clientSecret: clientSecret,
+      clientSecret: cart?.payment_session?.data.client_secret,
       mode: 'payment',
       currency: cart?.region?.currency_code,
       amount: cart?.total,
       capture_method: 'automatic',
     });
   };
+  
+  console.log(cart?.payment_session?.data.client_secret);
 
   const onExpDateChange = (event: any) => {
     const value = event.currentTarget.value.replace(/\D/g, '');
@@ -170,6 +170,7 @@ const CheckoutPage: NextPageWithLayout = () => {
       setSelectedMethod(cart?.shipping_methods[0].shipping_option?.id || '');
     }
     shippingMethodSelection();
+
   }, [step]);
 
   const copyBillingAddress = () => {
@@ -206,8 +207,6 @@ const CheckoutPage: NextPageWithLayout = () => {
       }
     }
   };
-
-  console.log(cart?.payment_session?.provider_id);
 
   const copyShippingAddressToCart = () => {
     // const shippingAddress = account.customer?.shipping_addresses?.filter(x => x.defulatAdddress === true)[0];
@@ -546,7 +545,7 @@ const CheckoutPage: NextPageWithLayout = () => {
                     className="mt-10.5"
                     onPress={() => {
                       setStep(2);
-                      createPaymentSession(cart?.id!);
+                      // createPaymentSessions(cart?.id!);
                     }}
                   >
                     Next
@@ -757,8 +756,11 @@ const CheckoutPage: NextPageWithLayout = () => {
                         name="paymentMethod"
                         id="paymentCard"
                         className="peer hidden"
-                        value="paymentCard"
-                        onChange={() => setSelectedPaymentMethod('manual')}
+                        value="manual"
+                        onChange={() => {
+                          setSelectedPaymentMethod('manual');
+                          createPaymentSession(cart?.id!, 'manual');
+                        }}
                       />
                       <label
                         htmlFor="paymentCard"
@@ -777,8 +779,11 @@ const CheckoutPage: NextPageWithLayout = () => {
                         name="paymentMethod"
                         id="paymentManual"
                         className="peer hidden"
-                        value="paymentManual"
-                        onChange={() => setSelectedPaymentMethod('stripe')}
+                        value="stripe"
+                        onChange={() => {
+                          setSelectedPaymentMethod('stripe');
+                          createPaymentSession(cart?.id!, 'stripe');
+                        }}
                       />
                       <label
                         htmlFor="paymentManual"

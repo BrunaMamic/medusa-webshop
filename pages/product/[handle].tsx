@@ -17,10 +17,15 @@ import RelatedProducts from '@/components/RelatedProducts';
 import { useNotification } from '@/lib/context/notification-context';
 
 const ProductSinglePage = ({ product }: any) => {
+  const { cart } = useCart();
   const router = useRouter();
   const { products, isLoading } = useProducts({
+    cart_id: cart?.id,
     handle: router.query.handle as string,
+    sales_channel_id: ["sc_01H7T59WCYF8353JA6SX6RQ1P7"]
   });
+  console.log(products);
+  
 
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
@@ -36,7 +41,6 @@ const ProductSinglePage = ({ product }: any) => {
 
 
   //CART
-  const { cart } = useCart();
   const store = useStore();
   const addItem = () => {
     const matchingVariant = getVariant(
@@ -181,11 +185,14 @@ const ProductSinglePage = ({ product }: any) => {
           -50%
         </Tag> */}
 
-        <p className="text-black-900 text-xl">{calculatedPrice}</p>
-        {/* ovo ako je snizeno koristi */}
-        {/* <p className="mt-2 text-lg text-gray-400 line-through">
-          {(products[0].variants[0]?.prices[0].amount / 100).toFixed(2)}
-        </p> */}
+{calculatedPrice ? (
+  <p className="text-red-900 text-xl">{calculatedPrice}</p>
+) : null}
+
+{/* Render the line-through price */}
+<p className="mt-2 text-lg text-gray-400 line-through">
+  {(products[0].variants[0]?.original_price! / 100).toFixed(2)}
+</p>
 
         <ul className="my-12 [&>li:last-child]:mb-0 [&>li]:mb-3.5">
           {products[0].description}

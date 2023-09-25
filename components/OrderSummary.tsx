@@ -12,6 +12,9 @@ import { useCart } from 'medusa-react';
 import { MEDUSA_BACKEND_URL } from '@/lib/config';
 import Medusa from '@medusajs/medusa-js';
 import * as Dialog from '@/components/ui/Dialog';
+import { QuantityInput } from './ui/QuantityInput';
+import { useStore } from '@/lib/context/store-context';
+import _ from 'lodash';
 
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 });
 
@@ -24,15 +27,32 @@ const OrderSummary = ({ setCardAdded }: any) => {
   const [invalidDiscount, setInvalidDiscount] = useState(false);
 
   const [checkoutVisible, setCheckoutVisible] = React.useState(false);
+  const [isEditingCart, setIsEditingCart] = useState(false);
   const { cart } = useCart();
+  const store = useStore();
 
-  const handleApplyDiscount = async () => {    
+  console.log(invalidDiscount, discountApplied, discountCode);
+
+  const updateItem = async (lineId: string, quantity: number) => {
+    await store.updateItem({
+      lineId,
+      quantity,
+    });
+  };
+
+  const deleteItem = (lineId: string) => {
+    store.deleteItem(lineId);
+  };
+
+  const toggleEditMode = () => {
+    setIsEditingCart(!isEditingCart);
+  };
+
+  const handleApplyDiscount = async () => {
     try {
       await medusa.carts.update(cart?.id || '', {
         discounts: [{ code: discountCode }],
       });
-      console.log(discountApplied);
-      
 
       setDiscountApplied(true);
       setInvalidDiscount(false);
@@ -42,6 +62,18 @@ const OrderSummary = ({ setCardAdded }: any) => {
       setInvalidDiscount(true);
     }
   };
+
+  const handleRemoveDiscount = async () => {
+    await medusa.carts.update(cart?.id || '', {
+      discounts: [],
+    });
+
+    setDiscountApplied(false);
+    setDiscountCode('');
+  };
+
+  const sortedCartItems = _.orderBy(cart?.items, 'variant.title', 'asc');
+
   return (
     <>
       <li className="flex items-center justify-between bg-white px-4 pb-5 pt-4 lg:hidden">
@@ -85,13 +117,13 @@ const OrderSummary = ({ setCardAdded }: any) => {
 
           <button
             className="relative transition-all before:absolute before:bottom-0 before:left-0 before:w-full before:border-b before:border-gray-900 before:content-[''] hover:font-black hover:before:border-b-2"
-            onClick={() => setCardAdded(false)}
+            onClick={toggleEditMode}
           >
-            Edit cart
+            {isEditingCart ? 'Done Editing' : 'Edit cart'}
           </button>
         </div>
 
-        {cart?.items.map((item: any, index: any) => (
+        {sortedCartItems.map((item: any, index: any) => (
           <div
             key={index}
             className="group mb-8 flex gap-x-2 gap-y-4 lg:gap-x-4"
@@ -106,7 +138,7 @@ const OrderSummary = ({ setCardAdded }: any) => {
               />
               {discountApplied ? (
                 <Tag variant="discount" className="absolute bottom-2 right-2">
-                  {`-${cart.discounts[0]?.rule.value}%`}
+                  {`-${cart?.discounts[0]?.rule.value}%`}
                 </Tag>
               ) : (
                 ''
@@ -143,7 +175,28 @@ const OrderSummary = ({ setCardAdded }: any) => {
                 {item.variant.title}
               </li>
               <li className="text-xs2 text-gray-400 lg:text-sm">
-                {item.quantity}
+                {/* {item.quantity} */}
+
+                {isEditingCart ? (
+                  <div key={item.id} className="mb-4">
+                    <QuantityInput
+                      onChange={(val) => {
+                        updateItem(item.id, val);
+                      }}
+                      defaultValue={item.quantity}
+                      maxValue={20}
+                      variant="secondary"
+                    />
+                    <button onClick={() => deleteItem(item.id)}>
+                      <Icon
+                        name="trash"
+                        className="transition-all hover:text-primary"
+                      />
+                    </button>
+                  </div>
+                ) : (
+                  item.quantity
+                )}
               </li>
             </ul>
           </div>
@@ -162,7 +215,11 @@ const OrderSummary = ({ setCardAdded }: any) => {
           />
 
           <Button size="lg" variant="tertiary" onPress={handleApplyDiscount}>
-            Apply
+            {discountApplied ? (
+              <span onClick={handleRemoveDiscount}>X</span>
+            ) : (
+              'Apply'
+            )}
           </Button>
 
           {/* {invalidDiscount && (

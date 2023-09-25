@@ -19,13 +19,13 @@ import { useNotification } from '@/lib/context/notification-context';
 const ProductSinglePage = ({ product }: any) => {
   const { cart } = useCart();
   const router = useRouter();
+  const [selectedRegion, setSelectedRegion] = useState('');
   const { products, isLoading } = useProducts({
     cart_id: cart?.id,
     handle: router.query.handle as string,
-    sales_channel_id: ["sc_01H7T59WCYF8353JA6SX6RQ1P7"]
+    sales_channel_id: ['sc_01H7T59WCYF8353JA6SX6RQ1P7'],
   });
   console.log(products);
-  
 
   const [uniqueColors, setUniqueColors] = useState<any>([]);
   const [uniqueSize, setUniqueSize] = useState<any>([]);
@@ -39,7 +39,6 @@ const ProductSinglePage = ({ product }: any) => {
 
   const showNotification = useNotification();
 
-
   //CART
   const store = useStore();
   const addItem = () => {
@@ -52,7 +51,10 @@ const ProductSinglePage = ({ product }: any) => {
         variantId: matchingVariant?.id as string,
         quantity: selectedOptions.quantity,
       });
-      showNotification(`Added ${selectedOptions.quantity}x ${products?.[0].title} to cart!`, 'success');
+      showNotification(
+        `Added ${selectedOptions.quantity}x ${products?.[0].title} to cart!`,
+        'success'
+      );
     }
   };
 
@@ -92,7 +94,7 @@ const ProductSinglePage = ({ product }: any) => {
       )
     );
     setUniqueSize(sizes);
-  }, [products]);
+  }, [products, cart]);
 
   const handleColorChange = (colorValue: string) => {
     const updatedOptions = {
@@ -185,14 +187,15 @@ const ProductSinglePage = ({ product }: any) => {
           -50%
         </Tag> */}
 
-{calculatedPrice ? (
-  <p className="text-red-900 text-xl">{calculatedPrice}</p>
-) : null}
+        {(
+          <p className="text-xl text-red-900">{cartCurrencyCode === 'eur' ? '€' : '$'} {(products[0].variants[0]?.calculated_price! / 100).toFixed(2) }</p>
+        )}
 
-{/* Render the line-through price */}
-<p className="mt-2 text-lg text-gray-400 line-through">
-  {(products[0].variants[0]?.original_price! / 100).toFixed(2)}
-</p>
+        <p className="mt-2 text-lg text-gray-400 line-through">
+          {calculatedPrice}
+        </p>
+
+        
 
         <ul className="my-12 [&>li:last-child]:mb-0 [&>li]:mb-3.5">
           {products[0].description}
@@ -279,11 +282,10 @@ const ProductSinglePage = ({ product }: any) => {
 
         {/* <p className="text-gray-300">Estimate delivery 2-3 days</p> */}
         <div className="mt-4 lg:mt-0 lg:flex lg:flex-col">
-      <div className="lg:hidden">
+          <div className="lg:hidden"></div>
+          <RelatedProducts products={relatedProducts} />
+        </div>
       </div>
-      <RelatedProducts products={relatedProducts} />
-    </div>
-  </div>
     </main>
   ) : null;
 };
